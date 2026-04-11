@@ -408,6 +408,8 @@ hr { border: none; border-top: 1px solid var(--border-faint); margin: 14px 0; }
 <div class="view" id="v-standings"></div>
 <div class="view" id="v-resolved"></div>
 
+<div id="loading" style="display:flex;align-items:center;justify-content:center;padding:64px 20px;color:var(--text-3);font-size:14px;letter-spacing:.3px">Connecting…</div>
+
 <button class="fab" id="fab" onclick="openCreateMarket()">
   <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
     <path d="M9 2v14M2 9h14" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
@@ -799,7 +801,7 @@ function resolveMarket(marketId, resolution) {
   closeSheet(); render(); toast(`Resolved ${resolution}! Winners paid out.`);
 }
 
-// ── PERSISTENCE & SYNC ────────────────────────────────────────────────────
+// ── SYNC ──────────────────────────────────────────────────────────────────
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyC5YQ4t50HKTeCgKkXcVg0LJ8yULWce8QM",
   authDomain: "kolache-e58fa.firebaseapp.com",
@@ -812,11 +814,14 @@ const FIREBASE_CONFIG = {
 
 let _db = null;
 
-// saveState: always writes. render() calls this; remote listener uses renderAll() to avoid re-saving.
+// Firebase is the sole source of truth for shared state.
+// currentId is device-local (each person picks their own player).
 function saveState() {
-  const data = { players: S.players, markets: S.markets, _uid: S._uid };
-  try { localStorage.setItem('kolache_v1', JSON.stringify({ ...data, currentId: S.currentId })); } catch(e) {}
-  if (_db) _db.ref('kolache').set(data).catch(e => console.error('Firebase write:', e));
+  try { localStorage.setItem('kolache_cid', JSON.stringify(S.currentId)); } catch(e) {}
+  if (_db) {
+    _db.ref('kolache').set({ players: S.players, markets: S.markets, _uid: S._uid })
+      .catch(e => console.error('Firebase write error:', e));
+  }
 }
 
 function ensureSeed() {
@@ -833,49 +838,42 @@ function ensureSeed() {
 }
 
 function initSync() {
-  // Render immediately from localStorage so the screen is never blank
-  // currentId lives only in localStorage (device-local — each person picks their own player)
-  try {
-    const raw = localStorage.getItem('kolache_v1');
-    if (raw) {
-      const d = JSON.parse(raw);
-      S.players   = d.players   || [];
-      S.markets   = d.markets   || [];
-      S.currentId = d.currentId ?? null;
-      S._uid      = d._uid      || 1;
-    }
-  } catch(e) {}
-  ensureSeed();
-  render();
+  try { S.currentId = JSON.parse(localStorage.getItem('kolache_cid')) ?? null; } catch(e) {}
 
-  // Connect Firebase in background
-  if (typeof firebase === 'undefined') return;
-  try {
-    const app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
-    _db = firebase.database(app);
-  } catch(e) { console.error('Firebase init:', e); return; }
+  const loadingEl = document.getElementById('loading');
+  const viewEls   = document.querySelectorAll('.view, .fab');
 
-  // Pull remote state once, then subscribe to live updates
-  _db.ref('kolache').once('value').then(snap => {
+  // Hide views, show loading indicator while Firebase connects
+  viewEls.forEach(el => el.style.display = 'none');
+  if (loadingEl) loadingEl.style.display = 'flex';
+
+  const app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
+  _db = firebase.database(app);
+
+  // Single on('value') listener — first fire is the initial load, subsequent are live updates.
+  // renderAll() only in the listener (no saveState) — avoids echo loop.
+  _db.ref('kolache').on('value', snap => {
     const d = snap.val();
     if (d) {
       S.players = d.players || [];
       S.markets = d.markets || [];
       S._uid    = Math.max(S._uid, d._uid || 1);
-      ensureSeed();
-      render(); // write merged state back
     }
+    ensureSeed();
 
-    // Live listener: update from remote, renderAll only (no re-save to avoid echo loop)
-    _db.ref('kolache').on('value', snap => {
-      const d = snap.val(); if (!d) return;
-      S.players = d.players || [];
-      S.markets = d.markets || [];
-      S._uid    = Math.max(S._uid, d._uid || 1);
-      ensureSeed();
-      renderAll();
-    });
-  }).catch(e => console.error('Firebase fetch:', e));
+    // Reveal app on first data arrival
+    if (loadingEl) loadingEl.style.display = 'none';
+    viewEls.forEach(el => el.style.display = '');
+    document.getElementById('fab').style.display = 'flex';
+
+    renderAll();
+  }, e => {
+    console.error('Firebase listener error:', e);
+    // Show app anyway so it's not stuck on loading
+    if (loadingEl) loadingEl.style.display = 'none';
+    viewEls.forEach(el => el.style.display = '');
+    ensureSeed(); renderAll();
+  });
 }
 
 

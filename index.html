@@ -366,6 +366,22 @@ body {
 
 /* Divider */
 hr { border: none; border-top: 1px solid var(--border-faint); margin: 14px 0; }
+
+/* Join banner */
+.join-banner {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 11px 14px; margin-bottom: 12px;
+  font-size: 13px; color: var(--text-2);
+}
+.btn-join {
+  padding: 5px 13px; border-radius: 20px;
+  border: 1px solid var(--accent);
+  background: var(--accent); color: #fff;
+  font-family: 'Outfit', sans-serif;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  white-space: nowrap;
+}
 </style>
 </head>
 <body>
@@ -437,25 +453,23 @@ function renderPill() {
     ? `<span class="avatar" style="background:${avatarColor(p.id)}">${initials(p.name)}</span>
        <span class="pill-name">${esc(p.name)}</span>
        <span class="pill-dough">${fmt(p.balance)}</span>`
-    : `<span style="padding:0 2px">Select Player</span>`;
+    : `<span style="padding:0 4px;color:var(--text-2)">+ Join</span>`;
 }
 
 function renderMarkets() {
   const el = document.getElementById('v-markets');
   const open = S.markets.filter(m => m.status === 'open');
-  if (!S.players.length) {
-    el.innerHTML = `<div class="welcome">
-      <div class="welcome-title">Welcome to Kolache</div>
-      <p class="welcome-lead">A prediction market for your friend group.<br>Everyone starts with ${fmt(DOUGH_START)}.</p>
-      <button class="btn-primary" style="max-width:180px;margin:0 auto;display:block" onclick="openAddPlayer()">Add Yourself</button>
-    </div>`;
-    return;
-  }
+  const banner = !me()
+    ? `<div class="join-banner">
+        <span>Add yourself to start betting</span>
+        <button class="btn-join" onclick="openAddPlayer()">Join free</button>
+       </div>`
+    : '';
   if (!open.length) {
-    el.innerHTML = `<div class="empty"><div class="empty-title">No open markets</div><p class="empty-desc">Tap + to create the first prediction</p></div>`;
+    el.innerHTML = banner + `<div class="empty"><div class="empty-title">No open markets</div><p class="empty-desc">Tap + to create the first prediction</p></div>`;
     return;
   }
-  el.innerHTML = open.map(marketCard).join('');
+  el.innerHTML = banner + open.map(marketCard).join('');
 }
 
 function marketCard(m) {
@@ -465,8 +479,8 @@ function marketCard(m) {
   const myBets = player ? m.bets.filter(b => b.playerId === player.id) : [];
   const myYes  = myBets.filter(b => b.side === 'YES').reduce((s,b) => s+b.amount, 0);
   const myNo   = myBets.filter(b => b.side === 'NO').reduce((s,b) => s+b.amount, 0);
-  const canBet = player && !overdue(m);
-  const isCreator = player && m.creatorId === player.id;
+  const canBet = !overdue(m);
+  const isCreator = player && (m.creatorId === player.id || m.creatorId === null);
   const bettors = new Set(m.bets.map(b => b.playerId)).size;
 
   return `<div class="card">
@@ -492,7 +506,7 @@ function marketCard(m) {
       ${overdue(m) ? `<span class="badge-overdue">Needs resolution</span>` : ''}
     </div>
     ${isCreator ? `<div class="resolve-strip">
-      <span class="resolve-label">You created this</span>
+      <span class="resolve-label">${m.creatorId === null ? 'Open for resolution' : 'You created this'}</span>
       <button class="btn-resolve" onclick="openResolve(${m.id})">Resolve &rarr;</button>
     </div>` : ''}
   </div>`;
@@ -800,6 +814,19 @@ function toast(msg) {
 
 // ── INIT ──────────────────────────────────────────────────────────────────
 loadState();
+
+// Seed default market on first ever load
+if (!S.markets.length) {
+  const closeDate = new Date();
+  closeDate.setDate(closeDate.getDate() + 1);
+  S.markets.push({
+    id: uid(), question: 'Cole drinks 8 or more beers today',
+    category: 'Sports', closeDate: closeDate.toISOString().slice(0,10),
+    creatorId: null, status: 'open', resolution: null, resolvedAt: null,
+    payouts: {}, bets: [], createdAt: Date.now()
+  });
+}
+
 render();
 </script>
 </body>

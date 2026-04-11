@@ -7,9 +7,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
-<!-- Firebase (only used if FIREBASE_CONFIG is set below) -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -800,39 +797,14 @@ function resolveMarket(marketId, resolution) {
   closeSheet(); render(); toast(`Resolved ${resolution}! Winners paid out.`);
 }
 
-// ── SYNC ──────────────────────────────────────────────────────────────────
-//
-// To enable real-time sync across all devices:
-//   1. firebase.google.com → Add project → Realtime Database → Create (test mode)
-//   2. Project settings (gear icon) → Your apps → </> web → register app → copy config
-//   3. Paste the config object below
-//
-const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyC5YQ4t50HKTeCgKkXcVg0LJ8yULWce8QM",
-  authDomain: "kolache-e58fa.firebaseapp.com",
-  databaseURL: "https://kolache-e58fa-default-rtdb.firebaseio.com",
-  projectId: "kolache-e58fa",
-  storageBucket: "kolache-e58fa.firebasestorage.app",
-  messagingSenderId: "96097618636",
-  appId: "1:96097618636:web:968b2566f0e15845955069",
-  measurementId: "G-7W9BW0LK2N"
-};
-
-let _db = null;
-let _syncing = false;
-
+// ── PERSISTENCE ───────────────────────────────────────────────────────────
 function saveState() {
-  // currentId is always device-local (each user picks their own player)
-  try { localStorage.setItem('kolache_cid', JSON.stringify(S.currentId)); } catch(e) {}
-
-  if (_syncing) return;
-  const data = { players: S.players, markets: S.markets, _uid: S._uid };
-  if (_db) {
-    _syncing = true;
-    _db.ref('kolache').set(data).finally(() => { _syncing = false; });
-  } else {
-    try { localStorage.setItem('kolache_v1', JSON.stringify(data)); } catch(e) {}
-  }
+  try {
+    localStorage.setItem('kolache_v1', JSON.stringify({
+      players: S.players, markets: S.markets,
+      currentId: S.currentId, _uid: S._uid
+    }));
+  } catch(e) {}
 }
 
 function ensureSeed() {
@@ -849,50 +821,18 @@ function ensureSeed() {
 }
 
 function initSync() {
-  // Always load currentId device-locally
-  try { S.currentId = JSON.parse(localStorage.getItem('kolache_cid')) ?? null; } catch(e) {}
-
-  // Load local state and render immediately — never a blank screen
   try {
     const raw = localStorage.getItem('kolache_v1');
     if (raw) {
       const d = JSON.parse(raw);
-      S.players = d.players || [];
-      S.markets = d.markets || [];
-      S._uid    = d._uid    || 1;
+      S.players   = d.players   || [];
+      S.markets   = d.markets   || [];
+      S.currentId = d.currentId ?? null;
+      S._uid      = d._uid      || 1;
     }
   } catch(e) {}
   ensureSeed();
-  render(); // instant render regardless of Firebase
-
-  // Then connect Firebase in the background and patch in remote state
-  if (!FIREBASE_CONFIG || typeof firebase === 'undefined') return;
-
-  try {
-    const app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
-    _db = firebase.database(app);
-  } catch(e) { console.error('Firebase init:', e); return; }
-
-  _db.ref('kolache').once('value').then(snap => {
-    const d = snap.val();
-    if (d) {
-      S.players = d.players || [];
-      S.markets = d.markets || [];
-      S._uid    = Math.max(S._uid, d._uid || 1);
-      ensureSeed();
-      render();
-    }
-
-    _db.ref('kolache').on('value', snap => {
-      if (_syncing) return;
-      const d = snap.val(); if (!d) return;
-      S.players = d.players || [];
-      S.markets = d.markets || [];
-      S._uid    = Math.max(S._uid, d._uid || 1);
-      ensureSeed();
-      renderAll();
-    });
-  }).catch(e => console.error('Firebase fetch:', e));
+  render();
 }
 
 // ── TOAST ─────────────────────────────────────────────────────────────────

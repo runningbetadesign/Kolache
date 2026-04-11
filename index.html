@@ -869,10 +869,15 @@ function initSync() {
   }
 
   // Firebase path
-  firebase.initializeApp(FIREBASE_CONFIG);
-  _db = firebase.database();
+  try {
+    const app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
+    _db = firebase.database(app);
+  } catch(e) {
+    console.error('Firebase init failed, falling back to localStorage', e);
+    ensureSeed(); render(); return;
+  }
 
-  // Fetch once then subscribe
+  // Fetch once then subscribe; fall back to empty render on any error
   _db.ref('kolache').once('value').then(snap => {
     const d = snap.val();
     if (d) {
@@ -890,8 +895,11 @@ function initSync() {
       S.markets = d.markets || [];
       S._uid    = Math.max(S._uid, d._uid || 1);
       ensureSeed();
-      renderAll(); // render only — don't re-save remote data
+      renderAll();
     });
+  }).catch(e => {
+    console.error('Firebase fetch failed, rendering with local state', e);
+    ensureSeed(); render();
   });
 }
 

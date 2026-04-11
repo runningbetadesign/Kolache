@@ -408,7 +408,6 @@ hr { border: none; border-top: 1px solid var(--border-faint); margin: 14px 0; }
 <div class="view" id="v-standings"></div>
 <div class="view" id="v-resolved"></div>
 
-<div id="loading" style="display:flex;align-items:center;justify-content:center;padding:64px 20px;color:var(--text-3);font-size:14px;letter-spacing:.3px">Connecting…</div>
 
 <button class="fab" id="fab" onclick="openCreateMarket()">
   <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -840,18 +839,15 @@ function ensureSeed() {
 function initSync() {
   try { S.currentId = JSON.parse(localStorage.getItem('kolache_cid')) ?? null; } catch(e) {}
 
-  const loadingEl = document.getElementById('loading');
-  const viewEls   = document.querySelectorAll('.view, .fab');
-
-  // Hide views, show loading indicator while Firebase connects
-  viewEls.forEach(el => el.style.display = 'none');
-  if (loadingEl) loadingEl.style.display = 'flex';
+  // Render immediately with empty state so there's never a blank screen
+  ensureSeed();
+  renderAll();
 
   const app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
   _db = firebase.database(app);
 
-  // Single on('value') listener — first fire is the initial load, subsequent are live updates.
-  // renderAll() only in the listener (no saveState) — avoids echo loop.
+  let firstLoad = true;
+
   _db.ref('kolache').on('value', snap => {
     const d = snap.val();
     if (d) {
@@ -861,19 +857,13 @@ function initSync() {
     }
     ensureSeed();
 
-    // Reveal app on first data arrival
-    if (loadingEl) loadingEl.style.display = 'none';
-    viewEls.forEach(el => el.style.display = '');
-    document.getElementById('fab').style.display = 'flex';
-
-    renderAll();
-  }, e => {
-    console.error('Firebase listener error:', e);
-    // Show app anyway so it's not stuck on loading
-    if (loadingEl) loadingEl.style.display = 'none';
-    viewEls.forEach(el => el.style.display = '');
-    ensureSeed(); renderAll();
-  });
+    if (firstLoad) {
+      firstLoad = false;
+      render(); // write seed market to Firebase if db was empty
+    } else {
+      renderAll(); // live updates — no re-save
+    }
+  }, e => console.error('Firebase:', e));
 }
 
 

@@ -445,7 +445,7 @@ function odds(m) {
 }
 
 // ── RENDER ────────────────────────────────────────────────────────────────
-function render() { renderPill(); renderMarkets(); renderStandings(); renderResolved(); }
+function render() { renderPill(); renderMarkets(); renderStandings(); renderResolved(); saveState(); }
 
 function renderPill() {
   const p = me();
@@ -800,10 +800,6 @@ function loadState() {
   } catch(e) { /* corrupted data — start fresh */ }
 }
 
-// Patch every mutating function to auto-save after render
-const _render = render;
-function render() { _render(); saveState(); }
-
 // ── TOAST ─────────────────────────────────────────────────────────────────
 let _tt;
 function toast(msg) {
@@ -815,12 +811,13 @@ function toast(msg) {
 // ── INIT ──────────────────────────────────────────────────────────────────
 loadState();
 
-// Seed default market on first ever load
-if (!S.markets.length) {
+// Ensure seed market always exists
+if (!S.markets.find(m => m.seed)) {
   const closeDate = new Date();
   closeDate.setDate(closeDate.getDate() + 1);
-  S.markets.push({
-    id: uid(), question: 'Cole drinks 8 or more beers today',
+  S.markets.unshift({
+    id: uid(), seed: true,
+    question: 'Cole drinks 8 or more beers today',
     category: 'Sports', closeDate: closeDate.toISOString().slice(0,10),
     creatorId: null, status: 'open', resolution: null, resolvedAt: null,
     payouts: {}, bets: [], createdAt: Date.now()

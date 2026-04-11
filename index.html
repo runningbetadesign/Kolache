@@ -762,6 +762,34 @@ function resolveMarket(marketId, resolution) {
   closeSheet(); render(); toast(`Resolved ${resolution}! Winners paid out.`);
 }
 
+// ── PERSISTENCE ───────────────────────────────────────────────────────────
+const STORE_KEY = 'kolache_v1';
+
+function saveState() {
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify({
+      players: S.players, markets: S.markets,
+      currentId: S.currentId, _uid: S._uid
+    }));
+  } catch(e) { /* storage full or unavailable */ }
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    S.players   = saved.players   || [];
+    S.markets   = saved.markets   || [];
+    S.currentId = saved.currentId ?? null;
+    S._uid      = saved._uid      || 1;
+  } catch(e) { /* corrupted data — start fresh */ }
+}
+
+// Patch every mutating function to auto-save after render
+const _render = render;
+function render() { _render(); saveState(); }
+
 // ── TOAST ─────────────────────────────────────────────────────────────────
 let _tt;
 function toast(msg) {
@@ -771,6 +799,7 @@ function toast(msg) {
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────
+loadState();
 render();
 </script>
 </body>

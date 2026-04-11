@@ -7,6 +7,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<!-- Firebase (only used if FIREBASE_CONFIG is set below) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -441,11 +444,18 @@ function odds(m) {
   let yp = 0, np = 0;
   for (const b of m.bets) b.side === 'YES' ? yp += b.amount : np += b.amount;
   const tot = yp + np;
-  return { yp, np, tot, yesPct: tot ? Math.round(yp/tot*100) : 50, noPct: tot ? Math.round(np/tot*100) : 50 };
+  return {
+    yp, np, tot,
+    yesPct:  tot ? Math.round(yp/tot*100) : 50,
+    noPct:   tot ? Math.round(np/tot*100) : 50,
+    yesMult: yp > 0 ? (tot/yp).toFixed(2) : null,
+    noMult:  np > 0 ? (tot/np).toFixed(2) : null,
+  };
 }
 
 // ── RENDER ────────────────────────────────────────────────────────────────
-function render() { renderPill(); renderMarkets(); renderStandings(); renderResolved(); saveState(); }
+function renderAll() { renderPill(); renderMarkets(); renderStandings(); renderResolved(); }
+function render()    { renderAll(); saveState(); }
 
 function renderPill() {
   const p = me();
@@ -487,8 +497,8 @@ function marketCard(m) {
     <div class="mkt-category">${esc(m.category)}</div>
     <div class="mkt-question">${esc(m.question)}</div>
     <div class="odds-row">
-      <span class="odds-yes">YES ${o.yesPct}%</span>
-      <span class="odds-no">${o.noPct}% NO</span>
+      <span class="odds-yes">YES ${o.yesPct}%${o.yesMult ? ` &middot; ${o.yesMult}x` : ''}</span>
+      <span class="odds-no">${o.noPct}%${o.noMult ? ` &middot; ${o.noMult}x` : ''} NO</span>
     </div>
     <div class="odds-track"><div class="odds-fill" style="width:${o.yesPct}%"></div></div>
     ${canBet ? `<div class="bet-row">
@@ -694,18 +704,32 @@ function openBet(marketId, side) {
     </div>
     <div class="field">
       <label class="field-label">Amount &nbsp;<span style="font-weight:400;color:var(--text-3)">Balance: ${fmt(player.balance)}</span></label>
-      <div class="presets">${presets.map(p => `<button class="preset" onclick="setPreset(this,${p})">${p.toLocaleString()}</button>`).join('')}</div>
-      <input type="number" id="betAmt" placeholder="Enter amount" min="1" max="${player.balance}" step="1">
-      <p class="helper">Winners split the entire pool proportionally.</p>
+      <div class="presets">${presets.map(p => `<button class="preset" onclick="setPreset(this,${p},${marketId},'${side}')">${p.toLocaleString()}</button>`).join('')}</div>
+      <input type="number" id="betAmt" placeholder="Enter amount" min="1" max="${player.balance}" step="1" oninput="calcPayout(${marketId},'${side}')">
+      <p class="helper" id="payoutPreview">Enter an amount to see your estimated return.</p>
     </div>
     <button class="btn-primary" style="background:${col}" onclick="placeBet(${marketId},'${side}')">Place Bet</button>`);
   setTimeout(() => document.getElementById('betAmt')?.focus(), 300);
 }
 
-function setPreset(btn, val) {
+function setPreset(btn, val, marketId, side) {
   document.getElementById('betAmt').value = val;
   document.querySelectorAll('.preset').forEach(b => b.classList.remove('on'));
   btn.classList.add('on');
+  calcPayout(marketId, side);
+}
+
+function calcPayout(marketId, side) {
+  const m = S.markets.find(x => x.id === marketId); if (!m) return;
+  const el = document.getElementById('payoutPreview'); if (!el) return;
+  const amt = Math.floor(+document.getElementById('betAmt').value);
+  if (!amt || amt < 1) { el.textContent = 'Enter an amount to see your estimated return.'; return; }
+  const o = odds(m);
+  const winPool = (side === 'YES' ? o.yp : o.np) + amt;
+  const newTot  = o.tot + amt;
+  const payout  = Math.floor(amt / winPool * newTot);
+  const profit  = payout - amt;
+  el.innerHTML  = `If ${side} wins: <strong style="color:var(--yes)">return ${fmt(payout)}</strong> <span style="color:var(--text-3)">(${profit >= 0 ? '+' : ''}${fmt(profit)} profit)</span>`;
 }
 
 function placeBet(marketId, side) {
@@ -776,28 +800,99 @@ function resolveMarket(marketId, resolution) {
   closeSheet(); render(); toast(`Resolved ${resolution}! Winners paid out.`);
 }
 
-// ── PERSISTENCE ───────────────────────────────────────────────────────────
-const STORE_KEY = 'kolache_v1';
+// ── SYNC ──────────────────────────────────────────────────────────────────
+//
+// To enable real-time sync across all devices:
+//   1. firebase.google.com → Add project → Realtime Database → Create (test mode)
+//   2. Project settings (gear icon) → Your apps → </> web → register app → copy config
+//   3. Paste the config object below
+//
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyC5YQ4t50HKTeCgKkXcVg0LJ8yULWce8QM",
+  authDomain: "kolache-e58fa.firebaseapp.com",
+  databaseURL: "https://kolache-e58fa-default-rtdb.firebaseio.com",
+  projectId: "kolache-e58fa",
+  storageBucket: "kolache-e58fa.firebasestorage.app",
+  messagingSenderId: "96097618636",
+  appId: "1:96097618636:web:968b2566f0e15845955069",
+  measurementId: "G-7W9BW0LK2N"
+};
+
+let _db = null;
+let _syncing = false;
 
 function saveState() {
-  try {
-    localStorage.setItem(STORE_KEY, JSON.stringify({
-      players: S.players, markets: S.markets,
-      currentId: S.currentId, _uid: S._uid
-    }));
-  } catch(e) { /* storage full or unavailable */ }
+  // currentId is always device-local (each user picks their own player)
+  try { localStorage.setItem('kolache_cid', JSON.stringify(S.currentId)); } catch(e) {}
+
+  if (_syncing) return;
+  const data = { players: S.players, markets: S.markets, _uid: S._uid };
+  if (_db) {
+    _syncing = true;
+    _db.ref('kolache').set(data).finally(() => { _syncing = false; });
+  } else {
+    try { localStorage.setItem('kolache_v1', JSON.stringify(data)); } catch(e) {}
+  }
 }
 
-function loadState() {
-  try {
-    const raw = localStorage.getItem(STORE_KEY);
-    if (!raw) return;
-    const saved = JSON.parse(raw);
-    S.players   = saved.players   || [];
-    S.markets   = saved.markets   || [];
-    S.currentId = saved.currentId ?? null;
-    S._uid      = saved._uid      || 1;
-  } catch(e) { /* corrupted data — start fresh */ }
+function ensureSeed() {
+  if (!S.markets.find(m => m.seed)) {
+    const d = new Date(); d.setDate(d.getDate() + 1);
+    S.markets.unshift({
+      id: uid(), seed: true,
+      question: 'Cole drinks 8 or more beers today',
+      category: 'Sports', closeDate: d.toISOString().slice(0,10),
+      creatorId: null, status: 'open', resolution: null,
+      resolvedAt: null, payouts: {}, bets: [], createdAt: Date.now()
+    });
+  }
+}
+
+function initSync() {
+  // Load device-local player selection
+  try { S.currentId = JSON.parse(localStorage.getItem('kolache_cid')) ?? null; } catch(e) {}
+
+  if (!FIREBASE_CONFIG) {
+    // localStorage fallback
+    try {
+      const raw = localStorage.getItem('kolache_v1');
+      if (raw) {
+        const d = JSON.parse(raw);
+        S.players = d.players || [];
+        S.markets = d.markets || [];
+        S._uid    = d._uid    || 1;
+      }
+    } catch(e) {}
+    ensureSeed();
+    render();
+    return;
+  }
+
+  // Firebase path
+  firebase.initializeApp(FIREBASE_CONFIG);
+  _db = firebase.database();
+
+  // Fetch once then subscribe
+  _db.ref('kolache').once('value').then(snap => {
+    const d = snap.val();
+    if (d) {
+      S.players = d.players || [];
+      S.markets = d.markets || [];
+      S._uid    = d._uid    || 1;
+    }
+    ensureSeed();
+    render();
+
+    _db.ref('kolache').on('value', snap => {
+      if (_syncing) return;
+      const d = snap.val(); if (!d) return;
+      S.players = d.players || [];
+      S.markets = d.markets || [];
+      S._uid    = Math.max(S._uid, d._uid || 1);
+      ensureSeed();
+      renderAll(); // render only — don't re-save remote data
+    });
+  });
 }
 
 // ── TOAST ─────────────────────────────────────────────────────────────────
@@ -809,22 +904,7 @@ function toast(msg) {
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────
-loadState();
-
-// Ensure seed market always exists
-if (!S.markets.find(m => m.seed)) {
-  const closeDate = new Date();
-  closeDate.setDate(closeDate.getDate() + 1);
-  S.markets.unshift({
-    id: uid(), seed: true,
-    question: 'Cole drinks 8 or more beers today',
-    category: 'Sports', closeDate: closeDate.toISOString().slice(0,10),
-    creatorId: null, status: 'open', resolution: null, resolvedAt: null,
-    payouts: {}, bets: [], createdAt: Date.now()
-  });
-}
-
-render();
+initSync();
 </script>
 </body>
 </html>

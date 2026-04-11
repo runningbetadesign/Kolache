@@ -849,44 +849,39 @@ function ensureSeed() {
 }
 
 function initSync() {
-  // Load device-local player selection
+  // Always load currentId device-locally
   try { S.currentId = JSON.parse(localStorage.getItem('kolache_cid')) ?? null; } catch(e) {}
 
-  if (!FIREBASE_CONFIG) {
-    // localStorage fallback
-    try {
-      const raw = localStorage.getItem('kolache_v1');
-      if (raw) {
-        const d = JSON.parse(raw);
-        S.players = d.players || [];
-        S.markets = d.markets || [];
-        S._uid    = d._uid    || 1;
-      }
-    } catch(e) {}
-    ensureSeed();
-    render();
-    return;
-  }
+  // Load local state and render immediately — never a blank screen
+  try {
+    const raw = localStorage.getItem('kolache_v1');
+    if (raw) {
+      const d = JSON.parse(raw);
+      S.players = d.players || [];
+      S.markets = d.markets || [];
+      S._uid    = d._uid    || 1;
+    }
+  } catch(e) {}
+  ensureSeed();
+  render(); // instant render regardless of Firebase
 
-  // Firebase path
+  // Then connect Firebase in the background and patch in remote state
+  if (!FIREBASE_CONFIG || typeof firebase === 'undefined') return;
+
   try {
     const app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
     _db = firebase.database(app);
-  } catch(e) {
-    console.error('Firebase init failed, falling back to localStorage', e);
-    ensureSeed(); render(); return;
-  }
+  } catch(e) { console.error('Firebase init:', e); return; }
 
-  // Fetch once then subscribe; fall back to empty render on any error
   _db.ref('kolache').once('value').then(snap => {
     const d = snap.val();
     if (d) {
       S.players = d.players || [];
       S.markets = d.markets || [];
-      S._uid    = d._uid    || 1;
+      S._uid    = Math.max(S._uid, d._uid || 1);
+      ensureSeed();
+      render();
     }
-    ensureSeed();
-    render();
 
     _db.ref('kolache').on('value', snap => {
       if (_syncing) return;
@@ -897,10 +892,7 @@ function initSync() {
       ensureSeed();
       renderAll();
     });
-  }).catch(e => {
-    console.error('Firebase fetch failed, rendering with local state', e);
-    ensureSeed(); render();
-  });
+  }).catch(e => console.error('Firebase fetch:', e));
 }
 
 // ── TOAST ─────────────────────────────────────────────────────────────────

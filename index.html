@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Kolache</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f8f7f5;
+  --surface: #ffffff;
+  --border: #e5e1dc;
+  --border-faint: #ede9e4;
+  --text-1: #1c1917;
+  --text-2: #57534e;
+  --text-3: #a8a29e;
+  --accent: #292524;
+  --yes: #2d6a4f;
+  --yes-light: #eef6f1;
+  --yes-border: #c2dcd0;
+  --no: #8b3e2c;
+  --no-light: #fdf2ef;
+  --no-border: #f0c9be;
+  --dough: #5c4a1e;
+}
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg);
+  color: var(--text-1);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── HEADER ── */
+.app-header {
+  position: sticky; top: 0; z-index: 50;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  height: 56px;
+  padding: 0 16px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.logo {
+  font-family: 'Lora', serif;
+  font-size: 20px; font-weight: 600; letter-spacing: -.3px;
+}
+.player-pill {
+  display: flex; align-items: center; gap: 7px;
+  padding: 5px 10px 5px 5px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  cursor: pointer;
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px; font-weight: 500;
+  color: var(--text-1);
+  max-width: 230px; overflow: hidden;
+}
+.player-pill:active { background: #f5f4f2; }
+.avatar {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  font-size: 10px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; letter-spacing: .3px;
+}
+.pill-name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pill-dough { color: var(--dough); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.pill-caret { opacity: .4; flex-shrink: 0; }
+
+/* ── TAB BAR ── */
+.tab-bar {
+  position: sticky; top: 56px; z-index: 49;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  display: flex; padding: 0 4px;
+  overflow-x: auto; scrollbar-width: none;
+}
+.tab-bar::-webkit-scrollbar { display: none; }
+.tab {
+  flex: none;
+  padding: 13px 14px 11px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px; font-weight: 500;
+  color: var(--text-3);
+  border: none; background: none; cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color .15s, border-color .15s;
+  white-space: nowrap;
+}
+.tab.active { color: var(--text-1); border-bottom-color: var(--text-1); }
+
+/* ── VIEWS ── */
+.view { display: none; padding: 16px; max-width: 580px; margin: 0 auto; padding-bottom: 100px; }
+.view.active { display: block; }
+
+/* ── CARDS ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.05);
+}
+.mkt-category {
+  font-size: 10px; font-weight: 600; letter-spacing: .9px;
+  text-transform: uppercase; color: var(--text-3); margin-bottom: 6px;
+}
+.mkt-question {
+  font-family: 'Lora', serif;
+  font-size: 16px; font-weight: 500; line-height: 1.45;
+  color: var(--text-1); margin-bottom: 14px;
+}
+
+/* Odds */
+.odds-row {
+  display: flex; justify-content: space-between;
+  font-size: 12px; font-weight: 600; margin-bottom: 5px;
+}
+.odds-yes { color: var(--yes); }
+.odds-no  { color: var(--no); }
+.odds-track {
+  height: 5px; border-radius: 3px;
+  background: var(--no-light); overflow: hidden; margin-bottom: 14px;
+}
+.odds-fill {
+  height: 100%; background: var(--yes);
+  border-radius: 3px; transition: width .4s ease;
+}
+
+/* Bet buttons */
+.bet-row { display: flex; gap: 8px; margin-bottom: 10px; }
+.btn-bet {
+  flex: 1; padding: 10px 0;
+  border-radius: 8px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px; font-weight: 600;
+  cursor: pointer; border: 1.5px solid;
+  transition: opacity .1s, transform .1s;
+}
+.btn-bet:active { opacity: .8; transform: scale(.98); }
+.btn-yes { background: var(--yes-light); color: var(--yes); border-color: var(--yes-border); }
+.btn-no  { background: var(--no-light);  color: var(--no);  border-color: var(--no-border); }
+
+.mkt-meta {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  font-size: 12px; color: var(--text-3); margin-top: 8px;
+}
+.badge-overdue {
+  display: inline-block; padding: 1px 7px; border-radius: 10px;
+  background: #fef9c3; color: #854d0e;
+  font-size: 10px; font-weight: 600; letter-spacing: .3px;
+}
+
+/* My bets strip */
+.my-bets {
+  margin-top: 10px; padding-top: 10px;
+  border-top: 1px solid var(--border-faint);
+  display: flex; flex-direction: column; gap: 4px;
+}
+.my-bet-line {
+  display: flex; justify-content: space-between;
+  font-size: 12px; color: var(--text-2);
+}
+.bet-yes-amt { color: var(--yes); font-weight: 600; }
+.bet-no-amt  { color: var(--no);  font-weight: 600; }
+
+/* Resolve strip */
+.resolve-strip {
+  margin-top: 10px; padding-top: 10px;
+  border-top: 1px solid var(--border-faint);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.resolve-label { font-size: 12px; color: var(--text-3); }
+.btn-resolve {
+  padding: 6px 14px; border-radius: 20px;
+  border: 1px solid var(--border); background: var(--surface);
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px; font-weight: 500; color: var(--text-2); cursor: pointer;
+}
+
+/* ── FAB ── */
+.fab {
+  position: fixed; bottom: 24px; right: 16px;
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 20px rgba(0,0,0,.2);
+  z-index: 48; transition: transform .15s;
+}
+.fab:active { transform: scale(.94); }
+
+/* ── SHEET ── */
+.backdrop {
+  position: fixed; inset: 0; background: transparent;
+  z-index: 100; pointer-events: none; transition: background .25s;
+}
+.backdrop.open { background: rgba(0,0,0,.35); pointer-events: all; }
+.sheet {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--surface);
+  border-radius: 20px 20px 0 0;
+  z-index: 101;
+  transform: translateY(100%);
+  transition: transform .3s cubic-bezier(.32,.72,0,1);
+  max-height: 92vh; overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.sheet.open { transform: translateY(0); }
+.sheet-handle {
+  width: 36px; height: 4px; border-radius: 2px;
+  background: var(--border); margin: 12px auto;
+}
+.sheet-body { padding: 4px 20px 44px; }
+.sheet-title {
+  font-family: 'Lora', serif;
+  font-size: 20px; font-weight: 600;
+  color: var(--text-1); margin-bottom: 18px;
+}
+.sheet-sub {
+  font-family: 'Lora', serif;
+  font-size: 15px; color: var(--text-2);
+  line-height: 1.5; margin-bottom: 16px;
+}
+
+/* Forms */
+.field { margin-bottom: 14px; }
+.field-label {
+  display: block;
+  font-size: 12px; font-weight: 600; letter-spacing: .3px;
+  color: var(--text-2); margin-bottom: 6px;
+}
+.field input, .field select, .field textarea {
+  width: 100%; padding: 11px 13px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 15px; color: var(--text-1);
+  background: var(--bg); outline: none;
+  transition: border-color .15s;
+  -webkit-appearance: none; appearance: none;
+}
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); }
+.field textarea { resize: vertical; min-height: 76px; line-height: 1.5; }
+.helper { font-size: 12px; color: var(--text-3); margin-top: 5px; }
+
+.presets { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.preset {
+  padding: 6px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px; font-weight: 500;
+  color: var(--text-2); background: var(--surface); cursor: pointer;
+  transition: border-color .12s, color .12s;
+}
+.preset.on, .preset:active { border-color: var(--accent); color: var(--accent); }
+
+.btn-primary {
+  width: 100%; padding: 14px;
+  border-radius: 8px; border: none;
+  font-family: 'Outfit', sans-serif;
+  font-size: 15px; font-weight: 600;
+  cursor: pointer; color: #fff; background: var(--accent);
+  transition: opacity .15s;
+}
+.btn-primary:active { opacity: .8; }
+
+/* Player list */
+.pli {
+  width: 100%; display: flex; align-items: center; gap: 10px;
+  padding: 11px 12px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; margin-bottom: 7px;
+  cursor: pointer; font-family: 'Outfit', sans-serif; text-align: left;
+}
+.pli:active { background: #f5f4f2; }
+.pli.current { border-color: var(--accent); background: #f8f7f5; }
+.pli-name { flex: 1; font-size: 15px; font-weight: 500; }
+.pli-bal  { font-size: 13px; font-weight: 600; color: var(--dough); }
+
+/* Info box */
+.info-box {
+  background: var(--bg); border-radius: 8px;
+  padding: 12px 14px; margin-bottom: 16px;
+}
+.info-row {
+  display: flex; justify-content: space-between;
+  font-size: 13px; color: var(--text-2); padding: 2px 0;
+}
+.info-row strong { color: var(--text-1); }
+
+/* Resolve btns */
+.resolve-btns { display: flex; gap: 10px; margin-top: 4px; }
+.btn-ryes, .btn-rno {
+  flex: 1; padding: 14px; border-radius: 8px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+}
+.btn-ryes { background: var(--yes-light); color: var(--yes); border: 1.5px solid var(--yes-border); }
+.btn-rno  { background: var(--no-light);  color: var(--no);  border: 1.5px solid var(--no-border); }
+.btn-ryes:active, .btn-rno:active { opacity: .8; }
+
+/* ── STANDINGS ── */
+.standing {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; margin-bottom: 8px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.05);
+}
+.standing.me { border-color: var(--accent); background: #faf9f7; }
+.rank { font-family: 'Lora', serif; font-size: 17px; font-weight: 600; color: var(--text-3); width: 28px; flex-shrink: 0; }
+.rank.gold   { color: #b8860b; }
+.rank.silver { color: #8a8a8a; }
+.rank.bronze { color: #a0622e; }
+.s-info { flex: 1; min-width: 0; }
+.s-name   { font-size: 15px; font-weight: 500; }
+.s-record { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+.s-bal    { font-family: 'Lora', serif; font-size: 16px; font-weight: 600; color: var(--dough); white-space: nowrap; }
+
+/* ── RESOLVED ── */
+.res-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px; border-radius: 10px;
+  font-size: 11px; font-weight: 700; letter-spacing: .5px;
+}
+.badge-yes { background: var(--yes-light); color: var(--yes); }
+.badge-no  { background: var(--no-light);  color: var(--no); }
+
+/* ── EMPTY ── */
+.empty { text-align: center; padding: 56px 20px; color: var(--text-3); }
+.empty-title { font-family: 'Lora', serif; font-size: 17px; color: var(--text-2); margin-bottom: 6px; }
+.empty-desc  { font-size: 14px; }
+
+/* ── WELCOME ── */
+.welcome {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px; padding: 28px 20px; text-align: center; margin-bottom: 16px;
+}
+.welcome-title { font-family: 'Lora', serif; font-size: 26px; font-weight: 600; margin-bottom: 8px; }
+.welcome-lead  { font-size: 15px; color: var(--text-2); margin-bottom: 22px; line-height: 1.6; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 84px; left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  background: var(--accent); color: #fff;
+  padding: 9px 18px; border-radius: 20px;
+  font-size: 14px; font-weight: 500;
+  opacity: 0; pointer-events: none;
+  transition: opacity .2s, transform .2s;
+  z-index: 200; white-space: nowrap;
+  max-width: calc(100vw - 40px);
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* Divider */
+hr { border: none; border-top: 1px solid var(--border-faint); margin: 14px 0; }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="logo">Kolache</div>
+  <button class="player-pill" id="pill" onclick="openPlayerList()">
+    <span id="pillInner">Select Player</span>
+    <svg class="pill-caret" width="10" height="6" viewBox="0 0 10 6" fill="none">
+      <path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+</header>
+
+<nav class="tab-bar">
+  <button class="tab active" onclick="switchTab(this,'markets')">Markets</button>
+  <button class="tab" onclick="switchTab(this,'standings')">Standings</button>
+  <button class="tab" onclick="switchTab(this,'resolved')">Resolved</button>
+</nav>
+
+<div class="view active" id="v-markets"></div>
+<div class="view" id="v-standings"></div>
+<div class="view" id="v-resolved"></div>
+
+<button class="fab" id="fab" onclick="openCreateMarket()">
+  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+    <path d="M9 2v14M2 9h14" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+  </svg>
+</button>
+
+<div class="backdrop" id="backdrop" onclick="closeSheet()"></div>
+<div class="sheet" id="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-body" id="sheetBody"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+// ── STATE ─────────────────────────────────────────────────────────────────
+const S = { players: [], markets: [], currentId: null, _uid: 1 };
+const DOUGH_START = 1000;
+const CATS = ['Sports','Entertainment','Pop Culture','Finance','Science','Tech','Other'];
+
+// ── UTILS ─────────────────────────────────────────────────────────────────
+const uid  = () => S._uid++;
+const me   = () => S.players.find(p => p.id === S.currentId) ?? null;
+const esc  = s  => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const fmt  = n  => `${Math.round(n).toLocaleString()} dough`;
+const initials = name => name.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0,2);
+const fmtDate  = d => new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+const overdue  = m => m.status === 'open' && new Date(m.closeDate) < new Date();
+
+function odds(m) {
+  let yp = 0, np = 0;
+  for (const b of m.bets) b.side === 'YES' ? yp += b.amount : np += b.amount;
+  const tot = yp + np;
+  return { yp, np, tot, yesPct: tot ? Math.round(yp/tot*100) : 50, noPct: tot ? Math.round(np/tot*100) : 50 };
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────
+function render() { renderPill(); renderMarkets(); renderStandings(); renderResolved(); }
+
+function renderPill() {
+  const p = me();
+  document.getElementById('pillInner').innerHTML = p
+    ? `<span class="avatar" style="background:${avatarColor(p.id)}">${initials(p.name)}</span>
+       <span class="pill-name">${esc(p.name)}</span>
+       <span class="pill-dough">${fmt(p.balance)}</span>`
+    : `<span style="padding:0 2px">Select Player</span>`;
+}
+
+function renderMarkets() {
+  const el = document.getElementById('v-markets');
+  const open = S.markets.filter(m => m.status === 'open');
+  if (!S.players.length) {
+    el.innerHTML = `<div class="welcome">
+      <div class="welcome-title">Welcome to Kolache</div>
+      <p class="welcome-lead">A prediction market for your friend group.<br>Everyone starts with ${fmt(DOUGH_START)}.</p>
+      <button class="btn-primary" style="max-width:180px;margin:0 auto;display:block" onclick="openAddPlayer()">Add Yourself</button>
+    </div>`;
+    return;
+  }
+  if (!open.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-title">No open markets</div><p class="empty-desc">Tap + to create the first prediction</p></div>`;
+    return;
+  }
+  el.innerHTML = open.map(marketCard).join('');
+}
+
+function marketCard(m) {
+  const o = odds(m);
+  const player = me();
+  const creator = S.players.find(p => p.id === m.creatorId);
+  const myBets = player ? m.bets.filter(b => b.playerId === player.id) : [];
+  const myYes  = myBets.filter(b => b.side === 'YES').reduce((s,b) => s+b.amount, 0);
+  const myNo   = myBets.filter(b => b.side === 'NO').reduce((s,b) => s+b.amount, 0);
+  const canBet = player && !overdue(m);
+  const isCreator = player && m.creatorId === player.id;
+  const bettors = new Set(m.bets.map(b => b.playerId)).size;
+
+  return `<div class="card">
+    <div class="mkt-category">${esc(m.category)}</div>
+    <div class="mkt-question">${esc(m.question)}</div>
+    <div class="odds-row">
+      <span class="odds-yes">YES ${o.yesPct}%</span>
+      <span class="odds-no">${o.noPct}% NO</span>
+    </div>
+    <div class="odds-track"><div class="odds-fill" style="width:${o.yesPct}%"></div></div>
+    ${canBet ? `<div class="bet-row">
+      <button class="btn-bet btn-yes" onclick="openBet(${m.id},'YES')">Bet YES</button>
+      <button class="btn-bet btn-no"  onclick="openBet(${m.id},'NO')">Bet NO</button>
+    </div>` : ''}
+    ${myYes || myNo ? `<div class="my-bets">
+      ${myYes ? `<div class="my-bet-line"><span>Your YES bet</span><span class="bet-yes-amt">${fmt(myYes)}</span></div>` : ''}
+      ${myNo  ? `<div class="my-bet-line"><span>Your NO bet</span><span class="bet-no-amt">${fmt(myNo)}</span></div>`  : ''}
+    </div>` : ''}
+    <div class="mkt-meta">
+      <span>Pool: ${fmt(o.tot)}</span>
+      <span>${bettors} bettor${bettors !== 1 ? 's' : ''}</span>
+      <span>Closes ${fmtDate(m.closeDate)}</span>
+      ${overdue(m) ? `<span class="badge-overdue">Needs resolution</span>` : ''}
+    </div>
+    ${isCreator ? `<div class="resolve-strip">
+      <span class="resolve-label">You created this</span>
+      <button class="btn-resolve" onclick="openResolve(${m.id})">Resolve &rarr;</button>
+    </div>` : ''}
+  </div>`;
+}
+
+function renderStandings() {
+  const el = document.getElementById('v-standings');
+  if (!S.players.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-title">No players yet</div><p class="empty-desc">Add yourself to start the standings</p></div>`;
+    return;
+  }
+  const sorted = [...S.players].sort((a,b) => b.balance - a.balance);
+  el.innerHTML = sorted.map((p,i) => {
+    const tot = p.wins + p.losses;
+    const wr  = tot ? Math.round(p.wins/tot*100) + '%' : '—';
+    const rankCls = ['gold','silver','bronze'][i] ? `rank ${['gold','silver','bronze'][i]}` : 'rank';
+    return `<div class="standing ${p.id === S.currentId ? 'me' : ''}">
+      <div class="${rankCls}">${i+1}</div>
+      <div class="s-info">
+        <div class="s-name">${esc(p.name)}${p.id === S.currentId ? ' <span style="font-size:11px;color:var(--text-3)">(you)</span>' : ''}</div>
+        <div class="s-record">${p.wins}W · ${p.losses}L · ${wr} win rate</div>
+      </div>
+      <div class="s-bal">${fmt(p.balance)}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderResolved() {
+  const el = document.getElementById('v-resolved');
+  const list = S.markets.filter(m => m.status === 'resolved').sort((a,b) => b.resolvedAt - a.resolvedAt);
+  if (!list.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-title">Nothing resolved yet</div><p class="empty-desc">Settled markets will appear here</p></div>`;
+    return;
+  }
+  const player = me();
+  el.innerHTML = list.map(m => {
+    const o = odds(m);
+    const creator = S.players.find(p => p.id === m.creatorId);
+    const myBets  = player ? m.bets.filter(b => b.playerId === player.id) : [];
+    const myWon   = myBets.filter(b => b.side === m.resolution);
+    const myLost  = myBets.filter(b => b.side !== m.resolution);
+    const payout  = player ? (m.payouts[player.id] || 0) : 0;
+    const lostAmt = myLost.reduce((s,b) => s+b.amount, 0);
+    return `<div class="card">
+      <div class="res-header">
+        <div class="mkt-category" style="margin:0">${esc(m.category)}</div>
+        <span class="badge badge-${m.resolution.toLowerCase()}">${m.resolution}</span>
+      </div>
+      <div class="mkt-question">${esc(m.question)}</div>
+      <div class="mkt-meta">
+        <span>Pool: ${fmt(o.tot)}</span>
+        <span>Resolved ${fmtDate(m.resolvedAt)}</span>
+        <span>by ${esc(creator ? creator.name : '?')}</span>
+      </div>
+      ${myBets.length ? `<div class="my-bets">
+        ${myWon.length && payout ? `<div class="my-bet-line"><span>Your payout</span><span class="bet-yes-amt">+${fmt(payout)}</span></div>` : ''}
+        ${myLost.length && !myWon.length ? `<div class="my-bet-line"><span>Lost</span><span class="bet-no-amt">-${fmt(lostAmt)}</span></div>` : ''}
+      </div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────
+function switchTab(btn, view) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('v-' + view).classList.add('active');
+  document.getElementById('fab').style.display = view === 'markets' ? 'flex' : 'none';
+}
+
+// ── SHEET ─────────────────────────────────────────────────────────────────
+function openSheet(html) {
+  document.getElementById('sheetBody').innerHTML = html;
+  document.getElementById('sheet').classList.add('open');
+  document.getElementById('backdrop').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeSheet() {
+  document.getElementById('sheet').classList.remove('open');
+  document.getElementById('backdrop').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
+
+// ── PLAYERS ───────────────────────────────────────────────────────────────
+function avatarColor(id) {
+  return ['#292524','#3d5a80','#2d6a4f','#7b2d8b','#8b4513','#1d4e89'][id % 6];
+}
+
+function openPlayerList() {
+  const items = S.players.map(p => `
+    <button class="pli ${p.id === S.currentId ? 'current' : ''}" onclick="selectPlayer(${p.id})">
+      <span class="avatar" style="background:${avatarColor(p.id)}">${initials(p.name)}</span>
+      <span class="pli-name">${esc(p.name)}</span>
+      <span class="pli-bal">${fmt(p.balance)}</span>
+    </button>`).join('');
+  openSheet(`<div class="sheet-title">Players</div>
+    ${items}
+    <button class="btn-primary" onclick="openAddPlayer()" style="margin-top:${S.players.length ? '4' : '0'}px">+ Add New Player</button>`);
+}
+
+function openAddPlayer() {
+  openSheet(`<div class="sheet-title">Join the Game</div>
+    <div class="field">
+      <label class="field-label">Your name</label>
+      <input id="newName" placeholder="e.g. Alex" maxlength="30" autocomplete="off" autocapitalize="words">
+    </div>
+    <p class="helper" style="margin-bottom:16px">You'll start with ${fmt(DOUGH_START)} to play with.</p>
+    <button class="btn-primary" onclick="addPlayer()">Join the Game</button>`);
+  setTimeout(() => document.getElementById('newName')?.focus(), 300);
+}
+
+function addPlayer() {
+  const name = (document.getElementById('newName').value || '').trim();
+  if (!name) { toast('Please enter your name'); return; }
+  if (S.players.find(p => p.name.toLowerCase() === name.toLowerCase())) {
+    toast('That name is already taken'); return;
+  }
+  const p = { id: uid(), name, balance: DOUGH_START, wins: 0, losses: 0, joinedAt: Date.now() };
+  S.players.push(p);
+  S.currentId = p.id;
+  closeSheet(); render();
+  toast(`Welcome, ${name}!`);
+}
+
+function selectPlayer(id) {
+  S.currentId = id;
+  closeSheet(); render();
+}
+
+// ── CREATE MARKET ─────────────────────────────────────────────────────────
+function openCreateMarket() {
+  if (!me()) { openAddPlayer(); return; }
+  const d = new Date(); d.setDate(d.getDate() + 7);
+  const defDate = d.toISOString().slice(0,10);
+  const today   = new Date().toISOString().slice(0,10);
+  openSheet(`<div class="sheet-title">New Market</div>
+    <div class="field">
+      <label class="field-label">Question</label>
+      <textarea id="mQ" placeholder="Will the Lakers make the playoffs this season?" maxlength="200"></textarea>
+    </div>
+    <div class="field">
+      <label class="field-label">Category</label>
+      <select id="mC">${CATS.map(c => `<option>${c}</option>`).join('')}</select>
+    </div>
+    <div class="field">
+      <label class="field-label">Close date</label>
+      <input type="date" id="mD" value="${defDate}" min="${today}">
+    </div>
+    <button class="btn-primary" onclick="createMarket()">Create Market</button>`);
+  setTimeout(() => document.getElementById('mQ')?.focus(), 300);
+}
+
+function createMarket() {
+  const q    = (document.getElementById('mQ').value || '').trim();
+  const cat  = document.getElementById('mC').value;
+  const date = document.getElementById('mD').value;
+  if (!q)    { toast('Please write a question'); return; }
+  if (!date) { toast('Please pick a close date'); return; }
+  S.markets.push({
+    id: uid(), question: q, category: cat,
+    closeDate: date, creatorId: S.currentId,
+    status: 'open', resolution: null, resolvedAt: null,
+    payouts: {}, bets: [], createdAt: Date.now()
+  });
+  closeSheet(); render();
+  toast('Market created!');
+}
+
+// ── BET ───────────────────────────────────────────────────────────────────
+function openBet(marketId, side) {
+  if (!me()) { openAddPlayer(); return; }
+  const m = S.markets.find(x => x.id === marketId); if (!m) return;
+  const player = me();
+  const o = odds(m);
+  const presets = [25, 50, 100, 250, 500].filter(p => p <= player.balance);
+  const col = side === 'YES' ? 'var(--yes)' : 'var(--no)';
+  openSheet(`<div class="sheet-title">Bet <span style="color:${col}">${side}</span></div>
+    <div class="sheet-sub">${esc(m.question)}</div>
+    <div class="info-box">
+      <div class="info-row"><span>YES</span><strong>${o.yesPct}%</strong></div>
+      <div class="info-row"><span>NO</span><strong>${o.noPct}%</strong></div>
+      <div class="info-row"><span>Total pool</span><strong>${fmt(o.tot)}</strong></div>
+    </div>
+    <div class="field">
+      <label class="field-label">Amount &nbsp;<span style="font-weight:400;color:var(--text-3)">Balance: ${fmt(player.balance)}</span></label>
+      <div class="presets">${presets.map(p => `<button class="preset" onclick="setPreset(this,${p})">${p.toLocaleString()}</button>`).join('')}</div>
+      <input type="number" id="betAmt" placeholder="Enter amount" min="1" max="${player.balance}" step="1">
+      <p class="helper">Winners split the entire pool proportionally.</p>
+    </div>
+    <button class="btn-primary" style="background:${col}" onclick="placeBet(${marketId},'${side}')">Place Bet</button>`);
+  setTimeout(() => document.getElementById('betAmt')?.focus(), 300);
+}
+
+function setPreset(btn, val) {
+  document.getElementById('betAmt').value = val;
+  document.querySelectorAll('.preset').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+}
+
+function placeBet(marketId, side) {
+  const player = me(); if (!player) return;
+  const amt = Math.floor(+document.getElementById('betAmt').value);
+  if (!amt || amt < 1)       { toast('Enter a valid amount'); return; }
+  if (amt > player.balance)  { toast("Not enough dough"); return; }
+  const m = S.markets.find(x => x.id === marketId);
+  if (!m || m.status !== 'open') return;
+  player.balance -= amt;
+  m.bets.push({ id: uid(), playerId: player.id, side, amount: amt, at: Date.now() });
+  closeSheet(); render();
+  toast(`Bet ${fmt(amt)} on ${side}`);
+}
+
+// ── RESOLVE ───────────────────────────────────────────────────────────────
+function openResolve(marketId) {
+  const m = S.markets.find(x => x.id === marketId); if (!m) return;
+  const o = odds(m);
+  openSheet(`<div class="sheet-title">Resolve Market</div>
+    <div class="sheet-sub">${esc(m.question)}</div>
+    <div class="info-box">
+      <div class="info-row"><span>YES pool</span><strong style="color:var(--yes)">${fmt(o.yp)}</strong></div>
+      <div class="info-row"><span>NO pool</span><strong style="color:var(--no)">${fmt(o.np)}</strong></div>
+      <div class="info-row"><span>Total pool</span><strong>${fmt(o.tot)}</strong></div>
+    </div>
+    <p style="font-size:14px;font-weight:500;color:var(--text-2);margin-bottom:10px">What was the outcome?</p>
+    <div class="resolve-btns">
+      <button class="btn-ryes" onclick="resolveMarket(${marketId},'YES')">YES</button>
+      <button class="btn-rno"  onclick="resolveMarket(${marketId},'NO')">NO</button>
+    </div>`);
+}
+
+function resolveMarket(marketId, resolution) {
+  const m = S.markets.find(x => x.id === marketId); if (!m) return;
+  const o = odds(m);
+  m.status = 'resolved'; m.resolution = resolution; m.resolvedAt = Date.now(); m.payouts = {};
+
+  const winBets  = m.bets.filter(b => b.side === resolution);
+  const loseBets = m.bets.filter(b => b.side !== resolution);
+  const winPool  = resolution === 'YES' ? o.yp : o.np;
+
+  if (!winPool || !o.tot) {
+    // No winning bets — refund everyone
+    m.bets.forEach(b => {
+      const p = S.players.find(x => x.id === b.playerId);
+      if (p) { p.balance += b.amount; m.payouts[b.playerId] = (m.payouts[b.playerId] || 0) + b.amount; }
+    });
+    closeSheet(); render(); toast('No bets on winning side — all refunded'); return;
+  }
+
+  // Pay winners proportionally from total pool
+  winBets.forEach(b => {
+    const p = S.players.find(x => x.id === b.playerId); if (!p) return;
+    const payout = Math.floor(b.amount / winPool * o.tot);
+    p.balance += payout;
+    m.payouts[b.playerId] = (m.payouts[b.playerId] || 0) + payout;
+  });
+
+  // W/L tracking
+  const winIds  = new Set(winBets.map(b => b.playerId));
+  const loseIds = new Set(loseBets.map(b => b.playerId));
+  winIds.forEach(id => { const p = S.players.find(x => x.id === id); if (p) p.wins++; });
+  loseIds.forEach(id => {
+    if (!winIds.has(id)) { const p = S.players.find(x => x.id === id); if (p) p.losses++; }
+  });
+
+  closeSheet(); render(); toast(`Resolved ${resolution}! Winners paid out.`);
+}
+
+// ── PERSISTENCE ───────────────────────────────────────────────────────────
+const STORE_KEY = 'kolache_v1';
+
+function saveState() {
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify({
+      players: S.players, markets: S.markets,
+      currentId: S.currentId, _uid: S._uid
+    }));
+  } catch(e) { /* storage full or unavailable */ }
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    S.players   = saved.players   || [];
+    S.markets   = saved.markets   || [];
+    S.currentId = saved.currentId ?? null;
+    S._uid      = saved._uid      || 1;
+  } catch(e) { /* corrupted data — start fresh */ }
+}
+
+// Patch every mutating function to auto-save after render
+const _render = render;
+function render() { _render(); saveState(); }
+
+// ── TOAST ─────────────────────────────────────────────────────────────────
+let _tt;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(_tt); _tt = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+loadState();
+render();
+</script>
+</body>
+</html>

@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -797,14 +799,24 @@ function resolveMarket(marketId, resolution) {
   closeSheet(); render(); toast(`Resolved ${resolution}! Winners paid out.`);
 }
 
-// ── PERSISTENCE ───────────────────────────────────────────────────────────
+// ── PERSISTENCE & SYNC ────────────────────────────────────────────────────
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyC5YQ4t50HKTeCgKkXcVg0LJ8yULWce8QM",
+  authDomain: "kolache-e58fa.firebaseapp.com",
+  databaseURL: "https://kolache-e58fa-default-rtdb.firebaseio.com",
+  projectId: "kolache-e58fa",
+  storageBucket: "kolache-e58fa.firebasestorage.app",
+  messagingSenderId: "96097618636",
+  appId: "1:96097618636:web:968b2566f0e15845955069"
+};
+
+let _db = null;
+
+// saveState: always writes. render() calls this; remote listener uses renderAll() to avoid re-saving.
 function saveState() {
-  try {
-    localStorage.setItem('kolache_v1', JSON.stringify({
-      players: S.players, markets: S.markets,
-      currentId: S.currentId, _uid: S._uid
-    }));
-  } catch(e) {}
+  const data = { players: S.players, markets: S.markets, _uid: S._uid };
+  try { localStorage.setItem('kolache_v1', JSON.stringify({ ...data, currentId: S.currentId })); } catch(e) {}
+  if (_db) _db.ref('kolache').set(data).catch(e => console.error('Firebase write:', e));
 }
 
 function ensureSeed() {
@@ -821,6 +833,8 @@ function ensureSeed() {
 }
 
 function initSync() {
+  // Render immediately from localStorage so the screen is never blank
+  // currentId lives only in localStorage (device-local — each person picks their own player)
   try {
     const raw = localStorage.getItem('kolache_v1');
     if (raw) {
@@ -833,7 +847,37 @@ function initSync() {
   } catch(e) {}
   ensureSeed();
   render();
+
+  // Connect Firebase in background
+  if (typeof firebase === 'undefined') return;
+  try {
+    const app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
+    _db = firebase.database(app);
+  } catch(e) { console.error('Firebase init:', e); return; }
+
+  // Pull remote state once, then subscribe to live updates
+  _db.ref('kolache').once('value').then(snap => {
+    const d = snap.val();
+    if (d) {
+      S.players = d.players || [];
+      S.markets = d.markets || [];
+      S._uid    = Math.max(S._uid, d._uid || 1);
+      ensureSeed();
+      render(); // write merged state back
+    }
+
+    // Live listener: update from remote, renderAll only (no re-save to avoid echo loop)
+    _db.ref('kolache').on('value', snap => {
+      const d = snap.val(); if (!d) return;
+      S.players = d.players || [];
+      S.markets = d.markets || [];
+      S._uid    = Math.max(S._uid, d._uid || 1);
+      ensureSeed();
+      renderAll();
+    });
+  }).catch(e => console.error('Firebase fetch:', e));
 }
+
 
 // ── TOAST ─────────────────────────────────────────────────────────────────
 let _tt;

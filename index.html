@@ -812,13 +812,14 @@ const FIREBASE_CONFIG = {
 };
 
 let _db = null;
+const SESSION_ID = Math.random().toString(36).slice(2, 10);
 
-// Firebase is the sole source of truth for shared state.
-// currentId is device-local (each person picks their own player).
+// Write shared state to Firebase, tagged with our session so the listener can ignore our own echoes.
 function saveState() {
   try { localStorage.setItem('kolache_cid', JSON.stringify(S.currentId)); } catch(e) {}
   if (_db) {
-    _db.ref('kolache').set({ players: S.players, markets: S.markets, _uid: S._uid })
+    _db.ref('kolache')
+      .set({ players: S.players, markets: S.markets, _uid: S._uid, _by: SESSION_ID })
       .catch(e => console.error('Firebase write error:', e));
   }
 }
@@ -846,23 +847,15 @@ function initSync() {
   const app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
   _db = firebase.database(app);
 
-  let firstLoad = true;
-
   _db.ref('kolache').on('value', snap => {
     const d = snap.val();
-    if (d) {
-      S.players = d.players || [];
-      S.markets = d.markets || [];
-      S._uid    = Math.max(S._uid, d._uid || 1);
-    }
+    if (!d) { render(); return; }       // empty DB — write seed to Firebase
+    if (d._by === SESSION_ID) return;   // our own echo — state already correct, skip
+    S.players = d.players || [];        // remote update — apply and re-render
+    S.markets = d.markets || [];
+    S._uid    = Math.max(S._uid, d._uid || 1);
     ensureSeed();
-
-    if (firstLoad) {
-      firstLoad = false;
-      render(); // write seed market to Firebase if db was empty
-    } else {
-      renderAll(); // live updates — no re-save
-    }
+    renderAll();
   }, e => console.error('Firebase:', e));
 }
 

@@ -1,0 +1,36 @@
+{
+  "rules": {
+    "kolache_v3": {
+      ".read": false,
+      ".write": false,
+
+      "allowlist": {
+        ".read": "auth != null && auth.token.email.toLowerCase() === 'patrick.hermiller@gmail.com'",
+        "$emailKey": {
+          ".read": "auth != null && (auth.token.email.toLowerCase().replace('.', ',') === $emailKey || auth.token.email.toLowerCase() === 'patrick.hermiller@gmail.com')",
+          ".write": "auth != null && auth.token.email.toLowerCase() === 'patrick.hermiller@gmail.com'",
+          ".validate": "newData.val() === true"
+        }
+      },
+
+      "pending": {
+        ".read": "auth != null && auth.token.email.toLowerCase() === 'patrick.hermiller@gmail.com'",
+        "$emailKey": {
+          ".read": "auth != null && (auth.token.email.toLowerCase().replace('.', ',') === $emailKey || auth.token.email.toLowerCase() === 'patrick.hermiller@gmail.com')",
+          ".write": "auth != null && (auth.token.email.toLowerCase().replace('.', ',') === $emailKey || auth.token.email.toLowerCase() === 'patrick.hermiller@gmail.com')",
+          ".validate": "newData.hasChildren(['email','requestedAt']) || newData.val() === null"
+        }
+      },
+
+      "players": {
+        ".read":  "auth != null && (root.child('kolache_v3/allowlist').child(auth.token.email.toLowerCase().replace('.', ',')).val() === true || auth.token.email.toLowerCase() === 'patrick.hermiller@gmail.com')",
+        ".write": "auth != null && (root.child('kolache_v3/allowlist').child(auth.token.email.toLowerCase().replace('.', ',')).val() === true || auth.token.email.toLowerCase() === 'patrick.hermiller@gmail.com')"
+      },
+
+      "wagers": {
+        ".read":  "auth != null && (root.child('kolache_v3/allowlist').child(auth.token.email.toLowerCase().replace('.', ',')).val() === true || auth.token.email.toLowerCase() === 'patrick.hermiller@gmail.com')",
+        ".write": "auth != null && (root.child('kolache_v3/allowlist').child(auth.token.email.toLowerCase().replace('.', ',')).val() === true || auth.token.email.toLowerCase() === 'patrick.hermiller@gmail.com')"
+      }
+    }
+  }
+}

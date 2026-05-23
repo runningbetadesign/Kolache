@@ -211,14 +211,28 @@ Don't introduce: a build step, a bundler, a framework, additional dependencies, 
 - Comment threads, reactions, social features beyond standings
 - Dispute-resolution voting / arbitration (disputes just flag the wager; humans resolve out-of-band)
 
-## Auth and access (planned, not yet built)
+## Auth and access
 
-The app is a private friend-group game and needs to keep strangers out. Planned approach:
+The app is a private friend-group game. Strangers are kept out by a Google-sign-in + admin-approval flow.
 
-- **Google sign-in** via Firebase Auth (replaces the current "pick a name from a list" identity model).
-- **Allowlist** at `/kolache_v3/allowlist/{emailKeyed}` — only signed-in users whose email is on the list can read/write game state.
-- **Self-serve request flow**: a friend signs in with Google, the app sees their email isn't on the allowlist, writes a `/kolache_v3/pending/{emailKeyed}` request, and shows a "waiting for approval" screen.
-- **Admin tab** visible only when the signed-in user's email matches a hardcoded `ADMIN_EMAIL`. Shows pending requests with Approve / Deny actions.
-- **RTDB security rules** enforce the allowlist server-side so that bypassing the UI doesn't get you in.
+- **Google sign-in** via Firebase Auth. There is no name-picker — your Google account *is* your identity. The player record under `/kolache_v3/players/{playerId}` is keyed by your `auth.uid` and auto-created on first allowed sign-in using your Google `displayName`.
+- **Allowlist** at `/kolache_v3/allowlist/{emailKey}` — emails (lowercased, dots → commas) mapped to `true`. Only signed-in users whose key is on the list (plus the admin) can read or write game state.
+- **Self-serve request flow**: a friend signs in with Google; the app checks `/kolache_v3/allowlist/{ek}`; if missing, writes `/kolache_v3/pending/{ek} = {name, email, requestedAt}` and shows a "waiting for approval" screen. Their app listens on `/kolache_v3/allowlist/{ek}` and transitions to the game automatically when the admin flips it to `true`.
+- **Admin tab** visible only when `auth.token.email === ADMIN_EMAIL` (`patrick.hermiller@gmail.com`). Shows pending requests with Approve (writes `allowlist/{ek}=true` + deletes `pending/{ek}` atomically) and Deny (deletes the pending entry).
+- **RTDB security rules** in `database.rules.json` enforce the allowlist server-side. A user can:
+  - Read/write their own `/pending/{ek}` entry (request access, retract).
+  - Read their own `/allowlist/{ek}` entry (so the pending → approved listener works).
+  - Read/write `/players` and `/wagers` only if their email is in `/allowlist`.
+  - Admin can read everything under `kolache_v3/`, write the allowlist, and manage any pending entry.
 
-The CLAUDE.md previously listed "user accounts / auth / OAuth" as non-goals; that's been superseded by the friend-group access goal.
+**Deploying rules.** The GitHub Action only deploys `hosting` (via `FirebaseExtended/action-hosting-deploy`). After editing `database.rules.json`, deploy rules manually from a workstation with the Firebase CLI:
+
+```
+firebase deploy --only database --project kolache-e58fa
+```
+
+**One-time Firebase Console setup** (not in this repo, has to be done by hand):
+- Authentication → Sign-in method → enable **Google**.
+- Authentication → Settings → Authorized domains: add `kolache-e58fa.web.app` and `kolache-e58fa.firebaseapp.com` (usually already present); add `localhost` for local testing.
+
+**To bootstrap yourself as the first allowed user**: sign in with Google. If your email matches `ADMIN_EMAIL`, you're allowed automatically (the admin-email check short-circuits the allowlist lookup); your admin tab then lets you approve everyone else.

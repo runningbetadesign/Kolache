@@ -1,4 +1,7 @@
 {
+  "database": {
+    "rules": "database.rules.json"
+  },
   "hosting": {
     "public": ".",
     "ignore": [
@@ -7,6 +10,7 @@
       ".git/**",
       ".github/**",
       "CLAUDE.md",
+      "database.rules.json",
       "**/.*"
     ],
     "headers": [

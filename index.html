@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -413,6 +414,57 @@ hr { border: none; border-top: 1px solid var(--border-faint); margin: 14px 0; }
   font-size: 12px; font-weight: 600; cursor: pointer;
   white-space: nowrap;
 }
+
+/* ── AUTH SCREEN ─────────────────────────────────────────────────────────── */
+.auth-screen {
+  position: fixed; inset: 0; z-index: 1000;
+  background: var(--bg);
+  display: none; align-items: center; justify-content: center;
+  padding: 24px;
+}
+.auth-screen.show { display: flex; }
+.auth-inner { max-width: 360px; width: 100%; text-align: center; }
+.auth-logo {
+  font-family: 'Lora', serif;
+  font-size: 36px; font-weight: 600; letter-spacing: -.5px;
+  margin-bottom: 8px;
+}
+.auth-tag {
+  font-size: 13px; color: var(--text-3);
+  margin-bottom: 36px; letter-spacing: .3px;
+}
+.auth-msg {
+  font-size: 15px; color: var(--text-2);
+  margin-bottom: 18px; line-height: 1.55;
+}
+.auth-msg.subtle { font-size: 13px; color: var(--text-3); margin-top: 24px; }
+.btn-google {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 12px 22px; border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface); color: var(--text-1);
+  font-family: 'Outfit', sans-serif;
+  font-size: 15px; font-weight: 500; cursor: pointer;
+  transition: background .12s;
+}
+.btn-google:active { background: var(--bg); }
+.btn-google svg { width: 18px; height: 18px; }
+.btn-link {
+  background: none; border: none;
+  color: var(--text-3); cursor: pointer;
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px; padding: 8px 12px;
+}
+.btn-link:hover { color: var(--text-2); }
+.auth-spinner {
+  width: 32px; height: 32px;
+  border: 3px solid var(--border);
+  border-top-color: var(--text-1);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+  margin: 40px auto;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -431,11 +483,22 @@ hr { border: none; border-top: 1px solid var(--border-faint); margin: 14px 0; }
   <button class="tab active" onclick="switchTab(this,'bets')">Bets</button>
   <button class="tab" onclick="switchTab(this,'standings')">Standings</button>
   <button class="tab" onclick="switchTab(this,'resolved')">Resolved</button>
+  <button class="tab" id="adminTab" style="display:none" onclick="switchTab(this,'admin')">Admin</button>
 </nav>
 
 <div class="view active" id="v-bets"></div>
 <div class="view" id="v-standings"></div>
 <div class="view" id="v-resolved"></div>
+<div class="view" id="v-admin"></div>
+
+<!-- Auth gate: covers everything until the user signs in and is allowlisted. -->
+<div class="auth-screen" id="authScreen">
+  <div class="auth-inner">
+    <div class="auth-logo">Kolache</div>
+    <div class="auth-tag">FRIENDS-ONLY WAGERING</div>
+    <div id="authBody"></div>
+  </div>
+</div>
 
 <button class="fab" id="fab" onclick="openCreateWager()">
   <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -455,16 +518,29 @@ hr { border: none; border-top: 1px solid var(--border-faint); margin: 14px 0; }
 'use strict';
 
 // ── STATE ─────────────────────────────────────────────────────────────────
-// Players and wagers are objects keyed by RTDB push id. Each value carries
-// an `id` field synthesized from the key for convenience inside the app.
-// Each wager has acceptances (object keyed by acceptanceId), and confirmedBy
-// / disputedBy as objects keyed by playerId (true = present).
-const S = { players: {}, wagers: {}, currentId: null };
+// Players and wagers are objects keyed by their RTDB key. Players are keyed
+// by their Firebase Auth uid; wagers by push id. Each value carries an `id`
+// field synthesized from the key. confirmedBy / disputedBy on a wager are
+// objects keyed by playerId (uid) with `true` as the value.
+const ADMIN_EMAIL = 'patrick.hermiller@gmail.com';
+const S = {
+  players: {},
+  wagers:  {},
+  allowlist: {},        // {emailKey: true} — synced from /kolache_v3/allowlist
+  pending:   {},        // {emailKey: {name, email, requestedAt}} — admin sees these
+  authUser:  null,      // firebase.User or null
+  authStatus: 'init',   // 'init' | 'signedout' | 'pending' | 'allowed'
+};
 const DOUGH_START = 1000;
 const CATS = ['Sports','Entertainment','Pop Culture','Finance','Science','Tech','Other'];
 
 // ── UTILS ─────────────────────────────────────────────────────────────────
-const me   = () => (S.currentId && S.players[S.currentId]) ? S.players[S.currentId] : null;
+// RTDB keys can't contain `.`, so emails are stored with dots → commas.
+const emailKey   = e => String(e || '').toLowerCase().replace(/\./g, ',');
+const myUid      = () => S.authUser?.uid || null;
+const myEmailKey = () => S.authUser ? emailKey(S.authUser.email) : null;
+const isAdmin    = () => !!(S.authUser && S.authUser.email && S.authUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase());
+const me         = () => myUid() && S.players[myUid()] ? S.players[myUid()] : null;
 const esc  = s  => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const fmt  = n  => `${Math.round(n).toLocaleString()} dough`;
 const initials = name => name.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0,2);
@@ -504,7 +580,44 @@ function confirmedIds(w)      { return w.confirmedBy ? Object.keys(w.confirmedBy
 function disputedIds(w)       { return w.disputedBy  ? Object.keys(w.disputedBy)  : []; }
 
 // ── RENDER ────────────────────────────────────────────────────────────────
-function renderAll() { renderPill(); renderBets(); renderStandings(); renderResolved(); }
+function renderAll() {
+  // Gate on auth — show the auth screen instead of the app until allowed.
+  if (S.authStatus !== 'allowed') {
+    renderAuthScreen();
+    return;
+  }
+  document.getElementById('authScreen').classList.remove('show');
+  renderPill();
+  renderBets();
+  renderStandings();
+  renderResolved();
+  renderAdmin();
+}
+
+function renderAuthScreen() {
+  const screen = document.getElementById('authScreen');
+  const body   = document.getElementById('authBody');
+  screen.classList.add('show');
+  if (S.authStatus === 'init') {
+    body.innerHTML = `<div class="auth-spinner"></div>`;
+  } else if (S.authStatus === 'signedout') {
+    body.innerHTML = `
+      <p class="auth-msg">Sign in with your Google account to join the game.</p>
+      <button class="btn-google" onclick="signIn()">
+        <svg viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.79 2.72v2.26h2.9c1.7-1.56 2.69-3.87 2.69-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.46-.8 5.95-2.18l-2.9-2.26c-.81.54-1.83.86-3.05.86-2.35 0-4.34-1.59-5.05-3.72H.96v2.34A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.95 10.7a5.41 5.41 0 0 1 0-3.4V4.96H.96a9 9 0 0 0 0 8.08l2.99-2.34z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58A9 9 0 0 0 9 0 9 9 0 0 0 .96 4.96l2.99 2.34C4.66 5.17 6.65 3.58 9 3.58z"/></svg>
+        Sign in with Google
+      </button>
+      <p class="auth-msg subtle">Kolache is a private friend group. If you're not on the list yet, the admin will need to approve you after you sign in.</p>
+    `;
+  } else if (S.authStatus === 'pending') {
+    const name = S.authUser?.displayName || S.authUser?.email || 'friend';
+    body.innerHTML = `
+      <p class="auth-msg">Hi, <strong>${esc(name)}</strong>.</p>
+      <p class="auth-msg">Your access request was sent. You'll be let in once the admin approves you — this page will switch over automatically.</p>
+      <button class="btn-link" onclick="signOut()">Sign out</button>
+    `;
+  }
+}
 
 function renderPill() {
   const p = me();
@@ -516,9 +629,9 @@ function renderPill() {
 }
 
 function joinBanner() {
+  // Only reached briefly post-sign-in while we create the player record.
   return `<div class="join-banner">
-    <span>Add yourself to start betting</span>
-    <button class="btn-join" onclick="openAddPlayer()">Join free</button>
+    <span>Setting up your account…</span>
   </div>`;
 }
 
@@ -660,10 +773,10 @@ function renderStandings() {
     const net = (p.balance||0) - DOUGH_START;
     const netStr = (net >= 0 ? '+' : '') + net.toLocaleString();
     const rankCls = ['gold','silver','bronze'][i] ? `rank ${['gold','silver','bronze'][i]}` : 'rank';
-    return `<div class="standing ${p.id === S.currentId ? 'me' : ''}">
+    return `<div class="standing ${p.id === myUid() ? 'me' : ''}">
       <div class="${rankCls}">${i+1}</div>
       <div class="s-info">
-        <div class="s-name">${esc(p.name)}${p.id === S.currentId ? ' <span style="font-size:11px;color:var(--text-3)">(you)</span>' : ''}</div>
+        <div class="s-name">${esc(p.name)}${p.id === myUid() ? ' <span style="font-size:11px;color:var(--text-3)">(you)</span>' : ''}</div>
         <div class="s-record">${p.wins||0}W · ${p.losses||0}L · ${wr} · ${netStr} net</div>
       </div>
       <div class="s-bal">${fmt(p.balance||0)}</div>
@@ -724,6 +837,57 @@ function renderResolved() {
   }).join('');
 }
 
+function renderAdmin() {
+  const tabBtn = document.getElementById('adminTab');
+  const el     = document.getElementById('v-admin');
+  if (!isAdmin()) {
+    tabBtn.style.display = 'none';
+    el.innerHTML = '';
+    return;
+  }
+  tabBtn.style.display = '';
+  const items = Object.entries(S.pending || {});
+  if (!items.length) {
+    el.innerHTML = emptyState('Nothing pending', 'New access requests will appear here once friends sign in.');
+    return;
+  }
+  el.innerHTML = items
+    .sort((a,b) => (a[1].requestedAt||0) - (b[1].requestedAt||0))
+    .map(([ek, req]) => `
+      <div class="card">
+        <div class="wgr-question">${esc(req.name || req.email || '(no name)')}</div>
+        <div class="wgr-meta">
+          <span>${esc(req.email || '')}</span>
+          ${req.requestedAt ? `<span>requested ${fmtDate(req.requestedAt)}</span>` : ''}
+        </div>
+        <div class="action-strip">
+          <span class="action-label">Allow into the game?</span>
+          <div class="action-buttons">
+            <button class="btn-confirm" onclick="approvePending('${ek}')">Approve</button>
+            <button class="btn-dispute" onclick="denyPending('${ek}')">Deny</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+}
+
+function approvePending(ek) {
+  if (!isAdmin() || !_db) return;
+  const updates = {};
+  updates[`${DB_PATH}/allowlist/${ek}`] = true;
+  updates[`${DB_PATH}/pending/${ek}`]   = null;
+  _db.ref().update(updates)
+    .then(() => toast('Approved'))
+    .catch(e => { console.error('approve:', e); toast('Approve failed'); });
+}
+
+function denyPending(ek) {
+  if (!isAdmin() || !_db) return;
+  _db.ref(`${DB_PATH}/pending/${ek}`).remove()
+    .then(() => toast('Denied'))
+    .catch(e => { console.error('deny:', e); toast('Deny failed'); });
+}
+
 // ── TABS ──────────────────────────────────────────────────────────────────
 function switchTab(btn, view) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -756,64 +920,28 @@ function avatarColor(id) {
   return ['#292524','#3d5a80','#2d6a4f','#7b2d8b','#8b4513','#1d4e89'][Math.abs(h) % 6];
 }
 
+// The player pill opens a roster view. Identity is now bound to the user's
+// Google account — you can't "switch" players, but you can sign out.
 function openPlayerList() {
-  const players = Object.values(S.players);
-  const items = players.map(p => `
-    <button class="pli ${p.id === S.currentId ? 'current' : ''}" onclick="selectPlayer('${p.id}')">
+  const players = Object.values(S.players)
+    .sort((a,b) => (b.balance||0) - (a.balance||0));
+  const items = players.length ? players.map(p => `
+    <div class="pli ${p.id === myUid() ? 'current' : ''}">
       <span class="avatar" style="background:${avatarColor(p.id)}">${initials(p.name)}</span>
-      <span class="pli-name">${esc(p.name)}</span>
+      <span class="pli-name">${esc(p.name)}${p.id === myUid() ? ' <span style="font-size:11px;color:var(--text-3)">(you)</span>' : ''}</span>
       <span class="pli-bal">${fmt(p.balance||0)}</span>
-    </button>`).join('');
+    </div>`).join('') : '<p class="helper" style="text-align:center;padding:16px 0">No players yet</p>';
+  const meEmail = S.authUser?.email ? `<p class="helper" style="text-align:center;margin-top:14px">Signed in as ${esc(S.authUser.email)}</p>` : '';
   openSheet(`<div class="sheet-title">Players</div>
     ${items}
-    <button class="btn-primary" onclick="openAddPlayer()" style="margin-top:${players.length ? '4' : '0'}px">+ Add New Player</button>`);
-}
-
-function openAddPlayer() {
-  openSheet(`<div class="sheet-title">Join the Game</div>
-    <div class="field">
-      <label class="field-label">Your name</label>
-      <input id="newName" placeholder="e.g. Alex" maxlength="30" autocomplete="off" autocapitalize="words">
-    </div>
-    <p class="helper" style="margin-bottom:16px">You'll start with ${fmt(DOUGH_START)} to play with.</p>
-    <button class="btn-primary" onclick="addPlayer()">Join the Game</button>`);
-  setTimeout(() => document.getElementById('newName')?.focus(), 300);
-}
-
-function addPlayer() {
-  const name = (document.getElementById('newName').value || '').trim();
-  if (!name) { toast('Please enter your name'); return; }
-  if (Object.values(S.players).find(p => p.name && p.name.toLowerCase() === name.toLowerCase())) {
-    toast('That name is already taken'); return;
-  }
-  if (!_db) { toast('Not connected — try again'); return; }
-  const newId = _db.ref(`${DB_PATH}/players`).push().key;
-  _db.ref(`${DB_PATH}/players/${newId}`).set({
-    name,
-    balance: DOUGH_START,
-    wins: 0,
-    losses: 0,
-    joinedAt: TS()
-  }).then(() => {
-    S.currentId = newId;
-    saveCurrentId();
-    renderPill();
-    closeSheet();
-    toast(`Welcome, ${name}!`);
-  }).catch(e => { console.error('addPlayer:', e); toast('Failed to join — try again'); });
-}
-
-function selectPlayer(id) {
-  S.currentId = id;
-  saveCurrentId();
-  closeSheet();
-  renderAll();
+    ${meEmail}
+    <button class="btn-primary" onclick="signOut()" style="margin-top:8px;background:var(--no)">Sign out</button>`);
 }
 
 // ── CREATE WAGER ──────────────────────────────────────────────────────────
 let _pickedSide = 'YES';
 function openCreateWager() {
-  if (!me()) { openAddPlayer(); return; }
+  if (!me()) { toast('Setting up your account…'); return; }
   const d = new Date(); d.setDate(d.getDate() + 7);
   const defDate = d.toISOString().slice(0,10);
   const today   = new Date().toISOString().slice(0,10);
@@ -909,7 +1037,7 @@ function createWager() {
 
 // ── ACCEPT WAGER ──────────────────────────────────────────────────────────
 function openAccept(wagerId) {
-  if (!me()) { openAddPlayer(); return; }
+  if (!me()) { toast('Setting up your account…'); return; }
   const w = S.wagers[wagerId]; if (!w) return;
   const player = me();
   if (w.proposerId === player.id) return toast("Can't take your own bet");
@@ -1165,12 +1293,10 @@ const FIREBASE_CONFIG = {
 // (we moved from a whole-tree set() to per-path updates, breaking schema).
 const DB_PATH = 'kolache_v3';
 let _db = null;
+let _dataListenersAttached = false;
+let _selfAllowlistListener = null; // ref currently being listened on, for cleanup
 
 const TS = () => firebase.database.ServerValue.TIMESTAMP;
-
-function saveCurrentId() {
-  try { localStorage.setItem('kolache_cid', JSON.stringify(S.currentId)); } catch(e) {}
-}
 
 // Convert {id: data, ...} from RTDB into {id: {id, ...data}, ...} so the rest
 // of the app can use a single object shape that carries the key on the value.
@@ -1184,11 +1310,128 @@ function applySnap(snap, into) {
   else                    S.wagers  = next;
 }
 
-function initSync() {
-  try { S.currentId = JSON.parse(localStorage.getItem('kolache_cid')) ?? null; } catch(e) {}
+// ── AUTH ───────────────────────────────────────────────────────────────────
+function signIn() {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
+  firebase.auth().signInWithPopup(provider).catch(e => {
+    console.error('signIn:', e);
+    // Common failure: popup blocked. Try redirect as fallback.
+    if (e.code === 'auth/popup-blocked' || e.code === 'auth/popup-closed-by-user') return;
+    toast('Sign-in failed');
+  });
+}
 
-  // Render immediately so the screen is never blank. Listeners will re-render
-  // as soon as the snapshots arrive.
+function signOut() {
+  firebase.auth().signOut().catch(e => console.error('signOut:', e));
+  closeSheet();
+}
+
+// User just signed in. Check the allowlist (admin always counts). Allowed →
+// attach data listeners + ensure player record. Not allowed → write a pending
+// request and listen for approval.
+function handleSignedIn(user) {
+  const ek = emailKey(user.email);
+  const isAdminUser = user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+  _db.ref(`${DB_PATH}/allowlist/${ek}`).once('value').then(snap => {
+    if (snap.val() === true || isAdminUser) {
+      S.authStatus = 'allowed';
+      ensurePlayerRecord(user);
+      attachDataListeners();
+      renderAll();
+    } else {
+      S.authStatus = 'pending';
+      writePendingRequest(user);
+      attachSelfAllowlistListener();
+      renderAll();
+    }
+  }).catch(e => {
+    console.error('allowlist check:', e);
+    toast('Access check failed — try again');
+  });
+}
+
+function writePendingRequest(user) {
+  const ek = emailKey(user.email);
+  _db.ref(`${DB_PATH}/pending/${ek}`).set({
+    name: user.displayName || '',
+    email: user.email,
+    requestedAt: TS()
+  }).catch(e => console.error('pending write:', e));
+}
+
+// While pending, listen for our own allowlist entry to flip to true (admin
+// approved us). When it does, transition into the game.
+function attachSelfAllowlistListener() {
+  const ek = myEmailKey(); if (!ek) return;
+  const ref = _db.ref(`${DB_PATH}/allowlist/${ek}`);
+  _selfAllowlistListener = ref;
+  ref.on('value', snap => {
+    if (snap.val() !== true) return;
+    ref.off();
+    _selfAllowlistListener = null;
+    // Clean up our pending entry in case admin approved without removing it.
+    _db.ref(`${DB_PATH}/pending/${ek}`).remove().catch(() => {});
+    S.authStatus = 'allowed';
+    ensurePlayerRecord(S.authUser);
+    attachDataListeners();
+    renderAll();
+  });
+}
+
+function ensurePlayerRecord(user) {
+  const ref = _db.ref(`${DB_PATH}/players/${user.uid}`);
+  ref.once('value').then(snap => {
+    if (snap.exists()) return;
+    ref.set({
+      name: user.displayName || user.email || 'Player',
+      balance: DOUGH_START,
+      wins: 0,
+      losses: 0,
+      joinedAt: TS()
+    }).catch(e => console.error('ensurePlayer:', e));
+  }).catch(e => console.error('ensurePlayer check:', e));
+}
+
+function attachDataListeners() {
+  if (_dataListenersAttached) return;
+  _dataListenersAttached = true;
+
+  _db.ref(`${DB_PATH}/players`).on('value', snap => {
+    applySnap(snap, 'players');
+    renderAll();
+  }, e => console.error('players sub:', e));
+
+  _db.ref(`${DB_PATH}/wagers`).on('value', snap => {
+    applySnap(snap, 'wagers');
+    renderAll();
+    maybeSettleAll();
+  }, e => console.error('wagers sub:', e));
+
+  if (isAdmin()) {
+    _db.ref(`${DB_PATH}/pending`).on('value', snap => {
+      S.pending = snap.val() || {};
+      renderAll();
+    }, e => console.error('pending sub:', e));
+    _db.ref(`${DB_PATH}/allowlist`).on('value', snap => {
+      S.allowlist = snap.val() || {};
+    }, e => console.error('allowlist sub:', e));
+  }
+}
+
+function detachDataListeners() {
+  if (!_db) return;
+  _db.ref(`${DB_PATH}/players`).off();
+  _db.ref(`${DB_PATH}/wagers`).off();
+  _db.ref(`${DB_PATH}/pending`).off();
+  _db.ref(`${DB_PATH}/allowlist`).off();
+  if (_selfAllowlistListener) { _selfAllowlistListener.off(); _selfAllowlistListener = null; }
+  _dataListenersAttached = false;
+  S.players = {}; S.wagers = {}; S.pending = {}; S.allowlist = {};
+}
+
+function initSync() {
+  // Render the spinner immediately so the screen is never blank.
   renderAll();
 
   try {
@@ -1199,27 +1442,21 @@ function initSync() {
     return;
   }
 
-  // Separate listeners on players and wagers. Per-path writes (push for new
-  // children, targeted update for fields) no longer clobber unrelated nodes,
-  // so concurrent actions from different devices both land.
-  _db.ref(`${DB_PATH}/players`).on('value', snap => {
-    applySnap(snap, 'players');
-    // If our local "who am I" no longer matches a player on the server, drop it.
-    if (S.currentId && !S.players[S.currentId]) {
-      S.currentId = null;
-      saveCurrentId();
+  // The auth state callback drives everything. It fires once on load (with
+  // null or the cached user) and again on every sign-in/sign-out.
+  firebase.auth().onAuthStateChanged(user => {
+    S.authUser = user || null;
+    if (!user) {
+      S.authStatus = 'signedout';
+      detachDataListeners();
+      renderAll();
+      return;
     }
+    // We have a user; figure out whether they're allowlisted.
+    S.authStatus = 'init';
     renderAll();
-  }, e => console.error('players sub:', e));
-
-  _db.ref(`${DB_PATH}/wagers`).on('value', snap => {
-    applySnap(snap, 'wagers');
-    renderAll();
-    // After every wagers update, check for any pending wager that's now
-    // fully confirmed and trigger settlement. The transaction on status
-    // ensures payouts are only applied once across all clients.
-    maybeSettleAll();
-  }, e => console.error('wagers sub:', e));
+    handleSignedIn(user);
+  });
 }
 
 // ── TOAST ─────────────────────────────────────────────────────────────────

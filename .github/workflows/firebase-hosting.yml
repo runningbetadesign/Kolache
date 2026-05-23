@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: w9jds/firebase-action@v14.10.1
+      - uses: w9jds/firebase-action@v15.18.0
         with:
           args: deploy --only database --project kolache-e58fa --non-interactive
         env:

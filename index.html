@@ -6,7 +6,7 @@
 <title>Kolache</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Barlow:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Barlow:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -55,9 +55,8 @@ body {
   display: flex; align-items: center; justify-content: space-between;
 }
 .logo {
-  font-family: 'Alfa Slab One', serif;
-  font-size: 20px; font-weight: 400; letter-spacing: 3px;
-  text-transform: uppercase;
+  font-family: 'DM Serif Display', serif;
+  font-size: 22px; font-weight: 400; letter-spacing: 1px;
   color: #f5f0e6;
 }
 .player-pill {
@@ -125,19 +124,18 @@ body {
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 14px;
-  margin-bottom: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 10px;
 }
 .wgr-category {
-  font-family: 'Alfa Slab One', serif;
+  font-family: 'Barlow', sans-serif;
   font-size: 10px; font-weight: 600; letter-spacing: 1.2px;
-  text-transform: uppercase; color: var(--text-3); margin-bottom: 6px;
+  text-transform: uppercase; color: var(--text-3); margin-bottom: 4px;
 }
 .wgr-question {
-  font-family: 'Alfa Slab One', serif;
-  font-size: 18px; font-weight: 600; line-height: 1.3;
+  font-family: 'DM Serif Display', serif;
+  font-size: 17px; font-weight: 400; line-height: 1.4;
   color: var(--text-1); margin-bottom: 4px;
 }
 .wgr-subline {
@@ -176,7 +174,7 @@ body {
   display: inline-block;
   padding: 2px 9px; border-radius: 3px;
   font-size: 11px; font-weight: 700; letter-spacing: .8px;
-  font-family: 'Alfa Slab One', serif;
+  font-family: 'DM Serif Display', serif;
 }
 .side-chip.yes { background: var(--yes-light); color: var(--yes); }
 .side-chip.no  { background: var(--no-light);  color: var(--no); }
@@ -186,7 +184,7 @@ body {
   width: 100%; margin-top: 12px;
   padding: 12px 0;
   border-radius: 4px;
-  font-family: 'Alfa Slab One', serif;
+  font-family: 'DM Serif Display', serif;
   font-size: 14px; font-weight: 600;
   cursor: pointer; border: 1.5px solid;
   transition: opacity .1s, transform .1s;
@@ -206,19 +204,19 @@ body {
   display: inline-block; padding: 1px 7px; border-radius: 3px;
   background: var(--warn-bg); color: var(--warn);
   font-size: 10px; font-weight: 600; letter-spacing: .5px;
-  font-family: 'Alfa Slab One', serif; text-transform: uppercase;
+  font-family: 'DM Serif Display', serif; text-transform: uppercase;
 }
 .badge-pending {
   display: inline-block; padding: 1px 7px; border-radius: 3px;
   background: var(--pending-bg); color: var(--pending);
   font-size: 10px; font-weight: 600; letter-spacing: .5px;
-  font-family: 'Alfa Slab One', serif; text-transform: uppercase;
+  font-family: 'DM Serif Display', serif; text-transform: uppercase;
 }
 .badge-disputed {
   display: inline-block; padding: 1px 7px; border-radius: 3px;
   background: var(--dispute-bg); color: var(--dispute);
   font-size: 10px; font-weight: 600; letter-spacing: .5px;
-  font-family: 'Alfa Slab One', serif; text-transform: uppercase;
+  font-family: 'DM Serif Display', serif; text-transform: uppercase;
 }
 
 /* ── MY BETS STRIP ── */
@@ -300,7 +298,7 @@ body {
 }
 .sheet-body { padding: 4px 20px 44px; }
 .sheet-title {
-  font-family: 'Alfa Slab One', serif;
+  font-family: 'DM Serif Display', serif;
   font-size: 22px; font-weight: 600;
   color: var(--text-1); margin-bottom: 18px;
   text-transform: uppercase;
@@ -316,7 +314,7 @@ body {
 .field { margin-bottom: 14px; }
 .field-label {
   display: block;
-  font-family: 'Alfa Slab One', serif;
+  font-family: 'DM Serif Display', serif;
   font-size: 12px; font-weight: 600; letter-spacing: .8px;
   color: var(--text-2); margin-bottom: 6px;
   text-transform: uppercase;
@@ -342,7 +340,7 @@ body {
 .side-btn {
   flex: 1; padding: 11px 0;
   border-radius: 4px;
-  font-family: 'Alfa Slab One', serif;
+  font-family: 'DM Serif Display', serif;
   font-size: 14px; font-weight: 600;
   cursor: pointer;
   border: 1.5px solid var(--border);
@@ -357,7 +355,7 @@ body {
 .btn-primary {
   width: 100%; padding: 14px;
   border-radius: 4px; border: none;
-  font-family: 'Alfa Slab One', serif;
+  font-family: 'DM Serif Display', serif;
   font-size: 16px; font-weight: 600;
   cursor: pointer; color: #fff; background: var(--accent);
   transition: opacity .15s;
@@ -375,7 +373,7 @@ body {
   cursor: pointer; font-family: 'Barlow', sans-serif; text-align: left;
 }
 .pli:active { background: #f0eeeb; }
-.pli.current { border-left: 3px solid var(--accent); background: #faf5f0; }
+.pli.current { border-left: 2px solid var(--accent); background: #faf5f0; }
 .pli-name { flex: 1; font-size: 15px; font-weight: 500; }
 .pli-bal  { font-size: 13px; font-weight: 600; color: var(--dough); }
 
@@ -383,7 +381,7 @@ body {
 .info-box {
   background: var(--bg); border-radius: 4px;
   padding: 12px 14px; margin-bottom: 16px;
-  border-left: 3px solid var(--accent);
+  border-left: 2px solid var(--accent);
 }
 .info-row {
   display: flex; justify-content: space-between;
@@ -395,7 +393,7 @@ body {
 .resolve-btns { display: flex; gap: 10px; margin-top: 4px; }
 .btn-ryes, .btn-rno {
   flex: 1; padding: 14px; border-radius: 4px;
-  font-family: 'Alfa Slab One', serif;
+  font-family: 'DM Serif Display', serif;
   font-size: 16px; font-weight: 700; cursor: pointer;
   text-transform: uppercase;
   letter-spacing: .5px;
@@ -414,14 +412,14 @@ body {
   box-shadow: 0 2px 6px rgba(0,0,0,.07);
 }
 .standing.me { border-left-color: var(--accent); background: #faf5f0; }
-.rank { font-family: 'Alfa Slab One', serif; font-size: 20px; font-weight: 700; color: var(--text-3); width: 28px; flex-shrink: 0; }
+.rank { font-family: 'DM Serif Display', serif; font-size: 20px; font-weight: 700; color: var(--text-3); width: 28px; flex-shrink: 0; }
 .rank.gold   { color: #b8860b; }
 .rank.silver { color: #8a8a8a; }
 .rank.bronze { color: #a0622e; }
 .s-info { flex: 1; min-width: 0; }
-.s-name   { font-size: 15px; font-weight: 600; font-family: 'Alfa Slab One', serif; }
+.s-name   { font-size: 15px; font-weight: 600; font-family: 'DM Serif Display', serif; }
 .s-record { font-size: 12px; color: var(--text-3); margin-top: 2px; }
-.s-bal    { font-family: 'Alfa Slab One', serif; font-size: 17px; font-weight: 700; color: var(--dough); white-space: nowrap; }
+.s-bal    { font-family: 'DM Serif Display', serif; font-size: 17px; font-weight: 700; color: var(--dough); white-space: nowrap; }
 
 /* ── RESOLVED ── */
 .res-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
@@ -429,14 +427,14 @@ body {
   display: inline-flex; align-items: center;
   padding: 2px 8px; border-radius: 3px;
   font-size: 11px; font-weight: 700; letter-spacing: .8px;
-  font-family: 'Alfa Slab One', serif;
+  font-family: 'DM Serif Display', serif;
 }
 .badge-yes { background: var(--yes-light); color: var(--yes); }
 .badge-no  { background: var(--no-light);  color: var(--no); }
 
 /* ── EMPTY ── */
 .empty { text-align: center; padding: 56px 20px; color: var(--text-3); }
-.empty-title { font-family: 'Alfa Slab One', serif; font-size: 18px; font-weight: 600; color: var(--text-2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .5px; }
+.empty-title { font-family: 'DM Serif Display', serif; font-size: 18px; font-weight: 600; color: var(--text-2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .5px; }
 .empty-desc  { font-size: 14px; }
 
 /* ── TOAST ── */
@@ -458,14 +456,14 @@ hr { border: none; border-top: 1px solid var(--border-faint); margin: 14px 0; }
 
 /* ── POOL / VOTE / RESOLVE ── */
 .pool-summary { display: flex; gap: 10px; margin: 10px 0; }
-.pool-side { flex: 1; padding: 10px; border-radius: 4px; text-align: center; font-size: 13px; font-family: 'Alfa Slab One', serif; }
+.pool-side { flex: 1; padding: 10px; border-radius: 4px; text-align: center; font-size: 13px; font-family: 'DM Serif Display', serif; }
 .pool-side.yes { background: var(--yes-light); color: var(--yes); border: 1px solid var(--yes-border); }
 .pool-side.no  { background: var(--no-light);  color: var(--no);  border: 1px solid var(--no-border); }
-.type-chip { display: inline-block; padding: 1px 6px; border-radius: 2px; font-size: 9px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; margin-left: 6px; font-family: 'Alfa Slab One', serif; }
+.type-chip { display: inline-block; padding: 1px 6px; border-radius: 2px; font-size: 9px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; margin-left: 6px; font-family: 'DM Serif Display', serif; }
 .type-chip.pool { background: #ece4d8; color: #5c4a2e; }
 .type-chip.wager { background: var(--bg); color: var(--text-3); }
 .vote-row { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
-.btn-vote { padding: 6px 14px; border-radius: 4px; border: 1.5px solid var(--border); background: var(--surface); font-family: 'Alfa Slab One', serif; font-size: 12px; font-weight: 600; cursor: pointer; text-transform: uppercase; letter-spacing: .5px; }
+.btn-vote { padding: 6px 14px; border-radius: 4px; border: 1.5px solid var(--border); background: var(--surface); font-family: 'DM Serif Display', serif; font-size: 12px; font-weight: 600; cursor: pointer; text-transform: uppercase; letter-spacing: .5px; }
 .btn-vote.yes { border-color: var(--yes-border); color: var(--yes); }
 .btn-vote.no  { border-color: var(--no-border);  color: var(--no); }
 .btn-vote.voted { font-weight: 700; }
@@ -480,7 +478,7 @@ hr { border: none; border-top: 1px solid var(--border-faint); margin: 14px 0; }
   padding: 5px 12px; border-radius: 4px;
   border: 1.5px solid var(--border);
   background: var(--surface);
-  font-family: 'Alfa Slab One', serif;
+  font-family: 'DM Serif Display', serif;
   font-size: 12px; font-weight: 500;
   color: var(--text-3); cursor: pointer;
   text-transform: uppercase;
@@ -499,7 +497,7 @@ hr { border: none; border-top: 1px solid var(--border-faint); margin: 14px 0; }
   display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
 }
 .side-label {
-  font-family: 'Alfa Slab One', serif;
+  font-family: 'DM Serif Display', serif;
   font-size: 10px; font-weight: 700; letter-spacing: .8px;
   padding: 1px 6px; border-radius: 3px;
   flex-shrink: 0;
@@ -524,7 +522,7 @@ hr { border: none; border-top: 1px solid var(--border-faint); margin: 14px 0; }
 .join-banner {
   display: flex; align-items: center; justify-content: space-between;
   background: var(--surface); border: 1px solid var(--border);
-  border-left: 3px solid var(--accent);
+  border-left: 2px solid var(--accent);
   border-radius: 4px; padding: 11px 14px; margin-bottom: 12px;
   font-size: 13px; color: var(--text-2);
 }
@@ -532,7 +530,7 @@ hr { border: none; border-top: 1px solid var(--border-faint); margin: 14px 0; }
   padding: 5px 13px; border-radius: 4px;
   border: 1px solid var(--accent);
   background: var(--accent); color: #fff;
-  font-family: 'Alfa Slab One', serif;
+  font-family: 'DM Serif Display', serif;
   font-size: 12px; font-weight: 600; cursor: pointer;
   white-space: nowrap;
   text-transform: uppercase;
@@ -549,14 +547,14 @@ hr { border: none; border-top: 1px solid var(--border-faint); margin: 14px 0; }
 .auth-screen.show { display: flex; }
 .auth-inner { max-width: 360px; width: 100%; text-align: center; }
 .auth-logo {
-  font-family: 'Alfa Slab One', serif;
+  font-family: 'DM Serif Display', serif;
   font-size: 40px; font-weight: 700; letter-spacing: 3px;
   text-transform: uppercase;
   margin-bottom: 8px;
   color: var(--accent);
 }
 .auth-tag {
-  font-family: 'Alfa Slab One', serif;
+  font-family: 'DM Serif Display', serif;
   font-size: 12px; color: var(--text-3);
   margin-bottom: 36px; letter-spacing: 2px;
   text-transform: uppercase;
@@ -620,7 +618,7 @@ hr { border: none; border-top: 1px solid var(--border-faint); margin: 14px 0; }
   display: block; width: 100%;
   padding: 13px 20px; border-radius: 4px;
   border: none; background: var(--accent); color: #fff;
-  font-family: 'Alfa Slab One', serif;
+  font-family: 'DM Serif Display', serif;
   font-size: 16px; font-weight: 600; cursor: pointer;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -631,7 +629,7 @@ hr { border: none; border-top: 1px solid var(--border-faint); margin: 14px 0; }
   justify-content: center;
 }
 .auth-section-label {
-  font-family: 'Alfa Slab One', serif;
+  font-family: 'DM Serif Display', serif;
   font-size: 11px; font-weight: 600; letter-spacing: .22em;
   text-transform: uppercase; color: var(--text-3);
   margin-bottom: 12px;

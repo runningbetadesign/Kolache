@@ -406,6 +406,23 @@ body {
 
 hr { border: none; border-top: 1px solid var(--border-faint); margin: 14px 0; }
 
+/* ── POOL / VOTE / RESOLVE ── */
+.pool-summary { display: flex; gap: 10px; margin: 10px 0; }
+.pool-side { flex: 1; padding: 10px; border-radius: 8px; text-align: center; font-size: 13px; }
+.pool-side.yes { background: var(--yes-light); color: var(--yes); border: 1px solid var(--yes-border); }
+.pool-side.no  { background: var(--no-light);  color: var(--no);  border: 1px solid var(--no-border); }
+.type-chip { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; margin-left: 6px; }
+.type-chip.pool { background: #e8e0f0; color: #5b3a8c; }
+.type-chip.wager { background: var(--bg); color: var(--text-3); }
+.vote-row { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
+.btn-vote { padding: 6px 14px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--surface); font-family: 'Outfit', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; }
+.btn-vote.yes { border-color: var(--yes-border); color: var(--yes); }
+.btn-vote.no  { border-color: var(--no-border);  color: var(--no); }
+.btn-vote.voted { font-weight: 700; }
+.btn-vote.yes.voted { background: var(--yes-light); }
+.btn-vote.no.voted  { background: var(--no-light); }
+.resolve-row { display: flex; gap: 10px; margin: 10px 0; }
+
 /* Join banner */
 .join-banner {
   display: flex; align-items: center; justify-content: space-between;
@@ -624,18 +641,26 @@ function proposerExposureFor(w, takerStake) {
 function parties(w) {
   const ids = new Set();
   if (w.proposerId != null) ids.add(w.proposerId);
-  for (const a of acceptanceList(w)) ids.add(a.takerId);
+  if ((w.type || 'wager') === 'pool') {
+    for (const b of poolBetList(w)) ids.add(b.playerId);
+  } else {
+    for (const a of acceptanceList(w)) ids.add(a.takerId);
+  }
   return [...ids];
 }
 function isParty(w, playerId) {
   if (playerId == null) return false;
   if (w.proposerId === playerId) return true;
+  if ((w.type || 'wager') === 'pool') {
+    return poolBetList(w).some(b => b.playerId === playerId);
+  }
   return acceptanceList(w).some(a => a.takerId === playerId);
 }
-function hasConfirmed(w, pid) { return !!(w.confirmedBy && w.confirmedBy[pid]); }
-function hasDisputed(w, pid)  { return !!(w.disputedBy && w.disputedBy[pid]); }
-function confirmedIds(w)      { return w.confirmedBy ? Object.keys(w.confirmedBy) : []; }
-function disputedIds(w)       { return w.disputedBy  ? Object.keys(w.disputedBy)  : []; }
+
+// ── POOL HELPERS ─────────────────────────────────────────────────────────
+function poolBetList(w)         { return w && w.poolBets ? Object.values(w.poolBets) : []; }
+function poolTotal(w)           { return poolBetList(w).reduce((s, b) => s + b.amount, 0); }
+function poolSideTotal(w, side) { return poolBetList(w).filter(b => b.side === side).reduce((s, b) => s + b.amount, 0); }
 
 // ── RENDER ────────────────────────────────────────────────────────────────
 function renderAll() {
@@ -831,12 +856,51 @@ function renderBets() {
 }
 
 function wagerCard(w) {
+  const wtype = w.type || 'wager';
+  return wtype === 'pool' ? wagerCardPool(w) : wagerCardStandard(w);
+}
+
+function renderVoteArea(w, player) {
+  const past = overdue(w);
+  if (!past || w.status !== 'open') return '';
+  const isMine = player && player.id === w.proposerId;
+  const proposer = S.players[w.proposerId];
+  const votes = w.votes || {};
+  const yesVotes = Object.values(votes).filter(v => v === 'YES').length;
+  const noVotes  = Object.values(votes).filter(v => v === 'NO').length;
+  const myVote = player ? (votes[player.id] || null) : null;
+  let tally = '';
+  if (yesVotes || noVotes) {
+    tally = `<div style="font-size:12px;color:var(--text-3);margin:4px 0">Votes: ${yesVotes} YES, ${noVotes} NO</div>`;
+  }
+  if (isMine) {
+    return `<div class="action-strip">
+      <span class="action-label">Past close date — resolve</span>
+      <div class="resolve-row">
+        <button class="btn-ryes" onclick="resolve('${w.id}','YES')">Resolve YES</button>
+        <button class="btn-rno"  onclick="resolve('${w.id}','NO')">Resolve NO</button>
+      </div>
+    </div>${tally}`;
+  }
+  if (player) {
+    const yVoted = myVote === 'YES' ? ' voted' : '';
+    const nVoted = myVote === 'NO'  ? ' voted' : '';
+    return `<div class="action-strip">
+      <span class="action-label">Waiting for ${esc(proposer?.name || 'creator')} to resolve</span>
+      <div class="vote-row">
+        <button class="btn-vote yes${yVoted}" onclick="castVote('${w.id}','YES')">YES</button>
+        <button class="btn-vote no${nVoted}"  onclick="castVote('${w.id}','NO')">NO</button>
+      </div>
+    </div>${tally}`;
+  }
+  return tally;
+}
+
+function wagerCardStandard(w) {
   const player    = me();
   const proposer  = S.players[w.proposerId];
   const isMine    = player && player.id === w.proposerId;
-  const myParty   = isParty(w, player?.id);
   const remaining = poolRemaining(w);
-  const filled    = remaining === 0;
   const past      = overdue(w);
 
   const otherSide  = w.proposerSide === 'YES' ? 'NO' : 'YES';
@@ -854,8 +918,6 @@ function wagerCard(w) {
     `${fmt(poolTaken(w))} / ${fmt(w.takerPool)} matched`,
     `Closes ${fmtDate(w.closeDate)}`,
     past && w.status === 'open' ? `<span class="badge-overdue">Needs resolution</span>` : '',
-    w.status === 'pending' ? `<span class="badge-pending">Pending confirmation</span>` : '',
-    w.status === 'disputed' ? `<span class="badge-disputed">Disputed</span>` : '',
   ].filter(Boolean).join(' · ');
 
   // ── action area
@@ -869,18 +931,8 @@ function wagerCard(w) {
       <span class="action-label">No takers yet — your dough is held</span>
       <button class="btn-action" onclick="cancelWager('${w.id}')">Cancel</button>
     </div>`;
-  } else if (myParty && past && w.status === 'open') {
-    action = `<div class="action-strip">
-      <span class="action-label">Past close date — call the outcome</span>
-      <button class="btn-action" onclick="openPropose('${w.id}')">Propose →</button>
-    </div>`;
-  } else if (w.status === 'pending' && myParty) {
-    action = renderPendingActions(w, player.id);
-  } else if (w.status === 'disputed' && myParty) {
-    action = `<div class="action-strip">
-      <span class="action-label">Disputed — anyone can re-propose</span>
-      <button class="btn-action" onclick="openPropose('${w.id}')">Re-propose →</button>
-    </div>`;
+  } else if (past && w.status === 'open') {
+    action = renderVoteArea(w, player);
   }
 
   // ── my position strip
@@ -901,10 +953,10 @@ function wagerCard(w) {
     </div>`;
   }
 
-  const editBtn = isMine && w.status === 'open' ? `<button class="btn-link" style="font-size:12px;padding:0" onclick="openEditWager('${w.id}')">Edit</button>` : '';
+  const editBtn = isAdmin() && w.status === 'open' ? `<button class="btn-link" style="font-size:12px;padding:0" onclick="openEditWager('${w.id}')">Edit</button>` : '';
 
   return `<div class="card">
-    <div class="wgr-category" style="display:flex;justify-content:space-between;align-items:center">${esc(w.category)} ${editBtn}</div>
+    <div class="wgr-category" style="display:flex;justify-content:space-between;align-items:center">${esc(w.category)}<span class="type-chip wager">1-on-1</span> ${editBtn}</div>
     <div class="wgr-question">${esc(w.question)}</div>
 
     <div class="wgr-line">
@@ -921,23 +973,62 @@ function wagerCard(w) {
   </div>`;
 }
 
-function renderPendingActions(w, playerId) {
-  const proposer = S.players[w.proposedBy];
-  const confirmed = hasConfirmed(w, playerId);
-  const waitingOn = parties(w).filter(id => !hasConfirmed(w, id));
-  if (confirmed) {
-    return `<div class="action-strip">
-      <span class="action-label">You confirmed <strong>${w.proposedOutcome}</strong> — waiting on ${waitingOn.length}</span>
+function wagerCardPool(w) {
+  const player   = me();
+  const proposer = S.players[w.proposerId];
+  const isMine   = player && player.id === w.proposerId;
+  const past     = overdue(w);
+
+  const yesTotal = poolSideTotal(w, 'YES');
+  const noTotal  = poolSideTotal(w, 'NO');
+  const total    = poolTotal(w);
+
+  const myBets = player ? poolBetList(w).filter(b => b.playerId === player.id) : [];
+  const canBet = player && !past && w.status === 'open';
+
+  // meta
+  const meta = [
+    `Pot: ${fmt(total)}`,
+    `Closes ${fmtDate(w.closeDate)}`,
+    past && w.status === 'open' ? `<span class="badge-overdue">Needs resolution</span>` : '',
+  ].filter(Boolean).join(' · ');
+
+  // action
+  let action = '';
+  if (canBet) {
+    action = `<div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn-take yes" style="flex:1" onclick="openPlacePoolBet('${w.id}')">Bet YES</button>
+      <button class="btn-take no"  style="flex:1" onclick="openPlacePoolBet('${w.id}')">Bet NO</button>
     </div>`;
+  } else if (past && w.status === 'open') {
+    action = renderVoteArea(w, player);
   }
-  return `<div class="action-strip">
-    <span class="action-label"><strong>${esc(proposer?.name || '?')}</strong> says <strong>${w.proposedOutcome}</strong></span>
-    <div class="action-buttons">
-      <button class="btn-confirm" onclick="confirmOutcome('${w.id}')">Confirm</button>
-      <button class="btn-dispute" onclick="disputeOutcome('${w.id}')">Dispute</button>
+
+  // my pool bets
+  let mine = '';
+  if (myBets.length) {
+    mine = `<div class="my-bets">${myBets.map(b => {
+      const cl = b.side === 'YES' ? 'pos' : 'neg';
+      return `<div class="my-bet-line"><span>You bet ${b.side}</span><span class="bet-${cl}-amt">${fmt(b.amount)}</span></div>`;
+    }).join('')}</div>`;
+  }
+
+  const editBtn = isAdmin() && w.status === 'open' ? `<button class="btn-link" style="font-size:12px;padding:0" onclick="openEditWager('${w.id}')">Edit</button>` : '';
+
+  return `<div class="card">
+    <div class="wgr-category" style="display:flex;justify-content:space-between;align-items:center">${esc(w.category)}<span class="type-chip pool">Pool</span> ${editBtn}</div>
+    <div class="wgr-question">${esc(w.question)}</div>
+    <div class="wgr-line"><span>Created by <strong>${esc(proposer?.name || 'Unknown')}</strong></span></div>
+    <div class="pool-summary">
+      <div class="pool-side yes"><strong>${fmt(yesTotal)}</strong><br>YES pool</div>
+      <div class="pool-side no"><strong>${fmt(noTotal)}</strong><br>NO pool</div>
     </div>
+    ${action}
+    ${mine}
+    <div class="wgr-meta">${meta}</div>
   </div>`;
 }
+
 
 function renderStandings() {
   const el = document.getElementById('v-standings');
@@ -975,46 +1066,95 @@ function renderResolved() {
   }
   const player = me();
   el.innerHTML = list.map(w => {
-    const proposer = S.players[w.proposerId];
-    const proposerWon = w.proposerSide === w.resolution;
-    const myParty = player && isParty(w, player.id);
-    const accs = acceptanceList(w);
-    let myLine = '';
-    if (myParty) {
-      let net = 0;
-      if (player.id === w.proposerId) {
-        for (const a of accs) {
-          const exp = proposerExposureFor(w, a.takerStake);
-          net += proposerWon ? a.takerStake : -exp;
+    const wtype = w.type || 'wager';
+    if (wtype === 'pool') return renderResolvedPool(w, player);
+    return renderResolvedWager(w, player);
+  }).join('');
+}
+
+function renderResolvedWager(w, player) {
+  const proposer = S.players[w.proposerId];
+  const proposerWon = w.proposerSide === w.resolution;
+  const myParty = player && isParty(w, player.id);
+  const accs = acceptanceList(w);
+  let myLine = '';
+  if (myParty) {
+    let net = 0;
+    if (player.id === w.proposerId) {
+      for (const a of accs) {
+        const exp = proposerExposureFor(w, a.takerStake);
+        net += proposerWon ? a.takerStake : -exp;
+      }
+    } else {
+      const mine = accs.filter(a => a.takerId === player.id);
+      for (const a of mine) {
+        const exp = proposerExposureFor(w, a.takerStake);
+        net += proposerWon ? -a.takerStake : exp;
+      }
+    }
+    const cls  = net >= 0 ? 'bet-pos-amt' : 'bet-neg-amt';
+    const sign = net >= 0 ? '+' : '−';
+    myLine = `<div class="my-bets"><div class="my-bet-line">
+      <span>Your result</span>
+      <span class="${cls}">${sign}${fmt(Math.abs(net))}</span>
+    </div></div>`;
+  }
+  return `<div class="card">
+    <div class="res-header">
+      <div class="wgr-category" style="margin:0">${esc(w.category)}<span class="type-chip wager">1-on-1</span></div>
+      <span class="badge badge-${w.resolution.toLowerCase()}">${w.resolution}</span>
+    </div>
+    <div class="wgr-question">${esc(w.question)}</div>
+    <div class="wgr-meta">
+      <span>${esc(proposer?.name || '?')} ${proposerWon ? 'won' : 'lost'} ${w.proposerSide}</span>
+      <span>Resolved ${fmtDate(w.resolvedAt)}</span>
+      <span>${accs.length} taker${accs.length !== 1 ? 's' : ''}</span>
+    </div>
+    ${myLine}
+  </div>`;
+}
+
+function renderResolvedPool(w, player) {
+  const proposer = S.players[w.proposerId];
+  const total = poolTotal(w);
+  const myParty = player && isParty(w, player.id);
+  let myLine = '';
+  if (myParty) {
+    const myBets = poolBetList(w).filter(b => b.playerId === player.id);
+    const myStaked = myBets.reduce((s, b) => s + b.amount, 0);
+    const winTotal = poolSideTotal(w, w.resolution);
+    const loseTotal = total - winTotal;
+    let net = 0;
+    for (const b of myBets) {
+      if (b.side === w.resolution) {
+        if (loseTotal === 0) {
+          // refund scenario — net 0
+        } else {
+          net += Math.floor(b.amount / winTotal * total) - b.amount;
         }
       } else {
-        const mine = accs.filter(a => a.takerId === player.id);
-        for (const a of mine) {
-          const exp = proposerExposureFor(w, a.takerStake);
-          net += proposerWon ? -a.takerStake : exp;
-        }
+        net -= b.amount;
       }
-      const cls  = net >= 0 ? 'bet-pos-amt' : 'bet-neg-amt';
-      const sign = net >= 0 ? '+' : '−';
-      myLine = `<div class="my-bets"><div class="my-bet-line">
-        <span>Your result</span>
-        <span class="${cls}">${sign}${fmt(Math.abs(net))}</span>
-      </div></div>`;
     }
-    return `<div class="card">
-      <div class="res-header">
-        <div class="wgr-category" style="margin:0">${esc(w.category)}</div>
-        <span class="badge badge-${w.resolution.toLowerCase()}">${w.resolution}</span>
-      </div>
-      <div class="wgr-question">${esc(w.question)}</div>
-      <div class="wgr-meta">
-        <span>${esc(proposer?.name || '?')} ${proposerWon ? 'won' : 'lost'} ${w.proposerSide}</span>
-        <span>Resolved ${fmtDate(w.resolvedAt)}</span>
-        <span>${accs.length} taker${accs.length !== 1 ? 's' : ''}</span>
-      </div>
-      ${myLine}
-    </div>`;
-  }).join('');
+    const cls  = net >= 0 ? 'bet-pos-amt' : 'bet-neg-amt';
+    const sign = net >= 0 ? '+' : '−';
+    myLine = `<div class="my-bets"><div class="my-bet-line">
+      <span>Your result</span>
+      <span class="${cls}">${sign}${fmt(Math.abs(net))}</span>
+    </div></div>`;
+  }
+  return `<div class="card">
+    <div class="res-header">
+      <div class="wgr-category" style="margin:0">${esc(w.category)}<span class="type-chip pool">Pool</span></div>
+      <span class="badge badge-${w.resolution.toLowerCase()}">${w.resolution}</span>
+    </div>
+    <div class="wgr-question">${esc(w.question)}</div>
+    <div class="wgr-meta">
+      <span>Pot: ${fmt(total)}</span>
+      <span>Resolved ${fmtDate(w.resolvedAt)}</span>
+    </div>
+    ${myLine}
+  </div>`;
 }
 
 function renderAdmin() {
@@ -1133,13 +1273,31 @@ function openPlayerList() {
 
 // ── CREATE WAGER ──────────────────────────────────────────────────────────
 let _pickedSide = 'YES';
+let _pickedType = 'wager';
+function pickType(t) {
+  _pickedType = t;
+  const wagerBtn = document.getElementById('typeWager');
+  const poolBtn  = document.getElementById('typePool');
+  if (wagerBtn) wagerBtn.classList.toggle('on', t === 'wager');
+  if (poolBtn)  poolBtn.classList.toggle('on', t === 'pool');
+  const fields = document.getElementById('wagerFields');
+  if (fields) fields.style.display = t === 'pool' ? 'none' : '';
+}
 function openCreateWager() {
   if (!me()) { toast('Setting up your account…'); return; }
   const d = new Date(); d.setDate(d.getDate() + 7); d.setHours(23, 59, 0, 0);
   const defDT = d.toISOString().slice(0,16);
   const nowDT = new Date().toISOString().slice(0,16);
   _pickedSide = 'YES';
+  _pickedType = 'wager';
   openSheet(`<div class="sheet-title">New Bet</div>
+    <div class="field">
+      <label class="field-label">Type</label>
+      <div class="side-toggle">
+        <button type="button" class="side-btn yes on" id="typeWager" onclick="pickType('wager')">1-on-1</button>
+        <button type="button" class="side-btn no"     id="typePool"  onclick="pickType('pool')">Pool</button>
+      </div>
+    </div>
     <div class="field">
       <label class="field-label">Question</label>
       <textarea id="wQ" placeholder="Will the Lakers make the playoffs?" maxlength="200"></textarea>
@@ -1148,24 +1306,26 @@ function openCreateWager() {
       <label class="field-label">Category</label>
       <select id="wC">${CATS.map(c => `<option>${c}</option>`).join('')}</select>
     </div>
-    <div class="field">
-      <label class="field-label">My side</label>
-      <div class="side-toggle">
-        <button type="button" class="side-btn yes on" id="sideYes" onclick="pickSide('YES')">YES</button>
-        <button type="button" class="side-btn no"     id="sideNo"  onclick="pickSide('NO')">NO</button>
-      </div>
-    </div>
-    <div class="two-col">
+    <div id="wagerFields">
       <div class="field">
-        <label class="field-label">I risk</label>
-        <input type="number" id="wRisk" placeholder="20" min="1" max="${me().balance}" inputmode="numeric" oninput="updateOddsHint()">
+        <label class="field-label">My side</label>
+        <div class="side-toggle">
+          <button type="button" class="side-btn yes on" id="sideYes" onclick="pickSide('YES')">YES</button>
+          <button type="button" class="side-btn no"     id="sideNo"  onclick="pickSide('NO')">NO</button>
+        </div>
       </div>
-      <div class="field">
-        <label class="field-label">To win</label>
-        <input type="number" id="wWin" placeholder="20" min="1" inputmode="numeric" oninput="updateOddsHint()">
+      <div class="two-col">
+        <div class="field">
+          <label class="field-label">I risk</label>
+          <input type="number" id="wRisk" placeholder="20" min="1" max="${me().balance}" inputmode="numeric" oninput="updateOddsHint()">
+        </div>
+        <div class="field">
+          <label class="field-label">To win</label>
+          <input type="number" id="wWin" placeholder="20" min="1" inputmode="numeric" oninput="updateOddsHint()">
+        </div>
       </div>
+      <p class="helper" id="oddsHint" style="margin-top:-6px;margin-bottom:14px">Even money — anyone can take up to ${fmt(me().balance)}.</p>
     </div>
-    <p class="helper" id="oddsHint" style="margin-top:-6px;margin-bottom:14px">Even money — anyone can take up to ${fmt(me().balance)}.</p>
     <div class="field">
       <label class="field-label">Closes at</label>
       <input type="datetime-local" id="wD" value="${defDT}" min="${nowDT}">
@@ -1196,32 +1356,47 @@ function createWager() {
   const q    = (document.getElementById('wQ').value || '').trim();
   const cat  = document.getElementById('wC').value;
   const date = document.getElementById('wD').value;
-  const risk = Math.floor(+document.getElementById('wRisk').value);
-  const win  = Math.floor(+document.getElementById('wWin').value);
   const player = me(); if (!player) return;
 
-  if (!q)               return toast('Write a question');
-  if (!date)            return toast('Pick a close date');
-  if (!risk || risk<1)  return toast('Enter what you risk');
-  if (!win  || win<1)   return toast('Enter what you can win');
-  if (risk > (player.balance||0)) return toast(`Not enough dough — you have ${fmt(player.balance||0)}`);
-  if (!_db) return toast('Not connected — try again');
+  if (!q)    return toast('Write a question');
+  if (!date) return toast('Pick a close date');
+  if (!_db)  return toast('Not connected — try again');
 
-  // Atomic: create wager + debit proposer's balance in one update.
   const newId = _db.ref(`${DB_PATH}/wagers`).push().key;
   const updates = {};
-  updates[`${DB_PATH}/wagers/${newId}`] = {
-    question: q, category: cat, closeDate: date,
-    proposerId: player.id,
-    proposerSide: _pickedSide,
-    proposerStake: risk,
-    takerPool: win,
-    status: 'open',
-    proposedOutcome: null, proposedBy: null,
-    resolution: null, resolvedAt: null,
-    createdAt: TS()
-  };
-  updates[`${DB_PATH}/players/${player.id}/balance`] = (player.balance||0) - risk;
+
+  if (_pickedType === 'pool') {
+    updates[`${DB_PATH}/wagers/${newId}`] = {
+      type: 'pool',
+      question: q, category: cat, closeDate: date,
+      proposerId: player.id,
+      proposerSide: null,
+      proposerStake: 0,
+      takerPool: 0,
+      status: 'open',
+      resolution: null, resolvedAt: null,
+      createdAt: TS()
+    };
+  } else {
+    const risk = Math.floor(+document.getElementById('wRisk').value);
+    const win  = Math.floor(+document.getElementById('wWin').value);
+    if (!risk || risk<1)  return toast('Enter what you risk');
+    if (!win  || win<1)   return toast('Enter what you can win');
+    if (risk > (player.balance||0)) return toast(`Not enough dough — you have ${fmt(player.balance||0)}`);
+    updates[`${DB_PATH}/wagers/${newId}`] = {
+      type: 'wager',
+      question: q, category: cat, closeDate: date,
+      proposerId: player.id,
+      proposerSide: _pickedSide,
+      proposerStake: risk,
+      takerPool: win,
+      status: 'open',
+      resolution: null, resolvedAt: null,
+      createdAt: TS()
+    };
+    updates[`${DB_PATH}/players/${player.id}/balance`] = (player.balance||0) - risk;
+  }
+
   _db.ref().update(updates).then(() => {
     closeSheet();
     toast('Bet posted!');
@@ -1231,7 +1406,7 @@ function createWager() {
 // ── EDIT WAGER (creator only, open status) ────────────────────────────────
 function openEditWager(wagerId) {
   const w = S.wagers[wagerId]; if (!w) return;
-  const player = me(); if (!player || player.id !== w.proposerId) return;
+  if (!isAdmin()) return;
   const closeDT = w.closeDate ? (w.closeDate.length > 10 ? w.closeDate : w.closeDate + 'T23:59') : '';
   const nowDT = new Date().toISOString().slice(0,16);
   openSheet(`<div class="sheet-title">Edit Bet</div>
@@ -1252,7 +1427,7 @@ function openEditWager(wagerId) {
 
 function saveWagerEdit(wagerId) {
   const w = S.wagers[wagerId]; if (!w) return;
-  const player = me(); if (!player || player.id !== w.proposerId) return;
+  if (!isAdmin()) return;
   if (!_db) return toast('Not connected');
   const q    = (document.getElementById('eQ')?.value || '').trim();
   const cat  = document.getElementById('eC')?.value;
@@ -1365,102 +1540,42 @@ function cancelWager(wagerId) {
   }).catch(e => { console.error('cancelWager:', e); toast('Cancel failed — try again'); });
 }
 
-// ── PROPOSE / CONFIRM / DISPUTE / SETTLE ──────────────────────────────────
-function openPropose(wagerId) {
+// ── RESOLVE / VOTE / SETTLE ───────────────────────────────────────────────
+function resolve(wagerId, outcome) {
   const w = S.wagers[wagerId]; if (!w) return;
-  const player = me(); if (!player) return toast('Sign in first');
-  if (!isParty(w, player.id)) return toast('Only parties to the bet can propose');
-  openSheet(`<div class="sheet-title">What was the outcome?</div>
-    <div class="sheet-sub">${esc(w.question)}</div>
-    <p style="font-size:13px;color:var(--text-2);margin-bottom:12px">All other parties will need to confirm before payouts go out.</p>
-    <div class="resolve-btns">
-      <button class="btn-ryes" onclick="proposeOutcome('${wagerId}','YES')">YES</button>
-      <button class="btn-rno"  onclick="proposeOutcome('${wagerId}','NO')">NO</button>
-    </div>`);
-}
-
-function proposeOutcome(wagerId, outcome) {
-  const w = S.wagers[wagerId]; if (!w) return;
-  const player = me(); if (!player) return;
-  if (!isParty(w, player.id)) return;
-  if (!_db) return;
-  // Resets confirmedBy to {proposer:true} and clears disputedBy. Atomic update.
-  const updates = {};
-  updates[`${DB_PATH}/wagers/${wagerId}/status`] = 'pending';
-  updates[`${DB_PATH}/wagers/${wagerId}/proposedOutcome`] = outcome;
-  updates[`${DB_PATH}/wagers/${wagerId}/proposedBy`] = player.id;
-  updates[`${DB_PATH}/wagers/${wagerId}/confirmedBy`] = { [player.id]: true };
-  updates[`${DB_PATH}/wagers/${wagerId}/disputedBy`] = null;
-  _db.ref().update(updates).then(() => {
-    closeSheet();
-    toast(`Proposed ${outcome}`);
-  }).catch(e => { console.error('propose:', e); toast('Proposal failed'); });
-}
-
-function confirmOutcome(wagerId) {
-  const w = S.wagers[wagerId]; if (!w) return;
-  const player = me(); if (!player) return;
-  if (!isParty(w, player.id)) return;
-  if (!_db) return;
-  // Toggle this player into confirmed, out of disputed. If they were the last
-  // dispute and the wager is in 'disputed', lift it back to 'pending'.
-  const otherDisputes = disputedIds(w).filter(id => id !== player.id);
-  const updates = {};
-  updates[`${DB_PATH}/wagers/${wagerId}/confirmedBy/${player.id}`] = true;
-  updates[`${DB_PATH}/wagers/${wagerId}/disputedBy/${player.id}`]  = null;
-  if (w.status === 'disputed' && otherDisputes.length === 0) {
-    updates[`${DB_PATH}/wagers/${wagerId}/status`] = 'pending';
-  }
-  _db.ref().update(updates).then(() => {
-    toast(`Confirmed ${w.proposedOutcome}`);
-  }).catch(e => { console.error('confirm:', e); toast('Confirm failed'); });
-}
-
-function disputeOutcome(wagerId) {
-  const w = S.wagers[wagerId]; if (!w) return;
-  const player = me(); if (!player) return;
-  if (!isParty(w, player.id)) return;
-  if (!_db) return;
-  const updates = {};
-  updates[`${DB_PATH}/wagers/${wagerId}/disputedBy/${player.id}`]  = true;
-  updates[`${DB_PATH}/wagers/${wagerId}/confirmedBy/${player.id}`] = null;
-  updates[`${DB_PATH}/wagers/${wagerId}/status`] = 'disputed';
-  _db.ref().update(updates).then(() => {
-    toast('Disputed — needs re-proposal');
-  }).catch(e => { console.error('dispute:', e); toast('Dispute failed'); });
-}
-
-// Scan all wagers; for any in 'pending' with no disputes and every party
-// confirmed, attempt to settle. Runs on every wagers-snapshot update so any
-// device that observes the all-confirmed state can drive settlement; the
-// transaction on status guarantees only one device's payouts apply.
-function maybeSettleAll() {
-  if (!_db) return;
-  for (const w of Object.values(S.wagers)) {
-    if (w.status !== 'pending') continue;
-    if (disputedIds(w).length) continue;
-    const ready = parties(w).every(id => hasConfirmed(w, id));
-    if (ready) trySettle(w);
-  }
-}
-
-function trySettle(w) {
-  // Transaction flips status pending → resolved exactly once across all clients.
-  // Whichever device wins the transaction then writes the payouts.
-  _db.ref(`${DB_PATH}/wagers/${w.id}/status`).transaction(cur => {
-    if (cur !== 'pending') return; // abort — already resolved or moved
+  if (w.proposerId !== myUid()) return toast('Only the creator can resolve');
+  if (w.status !== 'open') return toast('Bet is not open');
+  if (!_db) return toast('Not connected');
+  // Transaction flips status open → resolved exactly once across all clients.
+  _db.ref(`${DB_PATH}/wagers/${wagerId}/status`).transaction(cur => {
+    if (cur !== 'open') return; // abort
     return 'resolved';
   }, (err, committed) => {
-    if (err) { console.error('settle status:', err); return; }
-    if (!committed) return;
-    settleApplyPayouts(w);
+    if (err) { console.error('resolve status:', err); toast('Resolve failed'); return; }
+    if (!committed) { toast('Already resolved'); return; }
+    const wtype = w.type || 'wager';
+    if (wtype === 'pool') {
+      settlePool(w, outcome);
+    } else {
+      settleApplyPayouts(w, outcome);
+    }
+    toast(`Resolved ${outcome}`);
   });
 }
 
-function settleApplyPayouts(w) {
-  const outcome = w.proposedOutcome;
+function castVote(wagerId, vote) {
+  if (!myUid()) return toast('Sign in first');
+  const w = S.wagers[wagerId]; if (!w) return;
+  if (!_db) return toast('Not connected');
+  const currentVote = w.votes && w.votes[myUid()] ? w.votes[myUid()] : null;
+  const newVal = currentVote === vote ? null : vote;
+  _db.ref(`${DB_PATH}/wagers/${wagerId}/votes/${myUid()}`).set(newVal)
+    .then(() => toast(newVal ? `Voted ${newVal}` : 'Vote retracted'))
+    .catch(e => { console.error('castVote:', e); toast('Vote failed'); });
+}
+
+function settleApplyPayouts(w, outcome) {
   const proposerId = w.proposerId;
-  const proposer = S.players[proposerId];
   const proposerWon = w.proposerSide === outcome;
   const accs = acceptanceList(w);
   const taken = poolTaken(w);
@@ -1495,6 +1610,7 @@ function settleApplyPayouts(w) {
   const updates = {};
   updates[`${DB_PATH}/wagers/${w.id}/resolution`] = outcome;
   updates[`${DB_PATH}/wagers/${w.id}/resolvedAt`] = TS();
+  updates[`${DB_PATH}/wagers/${w.id}/resolvedBy`] = myUid();
 
   for (const [pid, delta] of Object.entries(balanceDelta)) {
     const p = S.players[pid]; if (!p) continue;
@@ -1510,6 +1626,125 @@ function settleApplyPayouts(w) {
   }
 
   _db.ref().update(updates).catch(e => console.error('settle apply:', e));
+}
+
+function settlePool(w, outcome) {
+  const bets = poolBetList(w);
+  const totalPot = bets.reduce((s, b) => s + b.amount, 0);
+  const winTotal = bets.filter(b => b.side === outcome).reduce((s, b) => s + b.amount, 0);
+  const loseTotal = totalPot - winTotal;
+
+  const balanceDelta = {};
+  const winDelta = {};
+  const lossDelta = {};
+  const bump = (map, pid, n) => { map[pid] = (map[pid] || 0) + n; };
+
+  if (winTotal === 0) {
+    // All bets on losing side — no payouts
+  } else if (loseTotal === 0) {
+    // Everyone bet on winning side — refund everyone
+    for (const b of bets) {
+      bump(balanceDelta, b.playerId, b.amount);
+    }
+  } else {
+    // Normal: winners split total pot proportionally
+    for (const b of bets) {
+      if (b.side === outcome) {
+        const payout = Math.floor(b.amount / winTotal * totalPot);
+        bump(balanceDelta, b.playerId, payout);
+        bump(winDelta, b.playerId, 1);
+      } else {
+        bump(lossDelta, b.playerId, 1);
+      }
+    }
+  }
+
+  // Collect unique playerIds on each side for wins/losses
+  const updates = {};
+  updates[`${DB_PATH}/wagers/${w.id}/resolution`] = outcome;
+  updates[`${DB_PATH}/wagers/${w.id}/resolvedAt`] = TS();
+  updates[`${DB_PATH}/wagers/${w.id}/resolvedBy`] = myUid();
+
+  for (const [pid, delta] of Object.entries(balanceDelta)) {
+    const p = S.players[pid]; if (!p) continue;
+    updates[`${DB_PATH}/players/${pid}/balance`] = (p.balance||0) + delta;
+  }
+  for (const [pid, delta] of Object.entries(winDelta)) {
+    const p = S.players[pid]; if (!p) continue;
+    updates[`${DB_PATH}/players/${pid}/wins`] = (p.wins||0) + delta;
+  }
+  for (const [pid, delta] of Object.entries(lossDelta)) {
+    const p = S.players[pid]; if (!p) continue;
+    updates[`${DB_PATH}/players/${pid}/losses`] = (p.losses||0) + delta;
+  }
+
+  _db.ref().update(updates).catch(e => console.error('settlePool:', e));
+}
+
+// ── POOL BETTING ──────────────────────────────────────────────────────────
+let _poolSide = 'YES';
+function openPlacePoolBet(wagerId) {
+  if (!me()) { toast('Setting up your account…'); return; }
+  const w = S.wagers[wagerId]; if (!w) return;
+  const player = me();
+  if (w.status !== 'open') return toast('Bet is closed');
+  if (overdue(w)) return toast('Past close date');
+  _poolSide = 'YES';
+  const yesTotal = poolSideTotal(w, 'YES');
+  const noTotal  = poolSideTotal(w, 'NO');
+  const cap = player.balance || 0;
+  const presets = [25, 50, 100, 250].filter(v => v <= cap);
+
+  openSheet(`<div class="sheet-title">Place a Pool Bet</div>
+    <div class="sheet-sub">${esc(w.question)}</div>
+    <div class="pool-summary">
+      <div class="pool-side yes"><strong>${fmt(yesTotal)}</strong><br>YES pool</div>
+      <div class="pool-side no"><strong>${fmt(noTotal)}</strong><br>NO pool</div>
+    </div>
+    <div class="field">
+      <label class="field-label">Your side</label>
+      <div class="side-toggle">
+        <button type="button" class="side-btn yes on" id="poolSideYes" onclick="pickPoolSide('YES')">YES</button>
+        <button type="button" class="side-btn no"     id="poolSideNo"  onclick="pickPoolSide('NO')">NO</button>
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label">Amount &nbsp;<span style="font-weight:400;color:var(--text-3)">Balance: ${fmt(cap)}</span></label>
+      ${presets.length ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">${
+        presets.map(v => `<button type="button" class="btn-action" onclick="document.getElementById('poolAmt').value=${v}">${v}</button>`).join('')
+      }${cap > 0 ? `<button type="button" class="btn-action" onclick="document.getElementById('poolAmt').value=${cap}">Max ${cap}</button>` : ''}</div>` : ''}
+      <input type="number" id="poolAmt" min="1" max="${cap}" step="1" placeholder="Up to ${cap}" inputmode="numeric">
+    </div>
+    <button class="btn-primary" onclick="placePoolBet('${w.id}')">Place Bet</button>`);
+  setTimeout(() => document.getElementById('poolAmt')?.focus(), 300);
+}
+
+function pickPoolSide(s) {
+  _poolSide = s;
+  document.getElementById('poolSideYes').classList.toggle('on', s === 'YES');
+  document.getElementById('poolSideNo').classList.toggle('on', s === 'NO');
+}
+
+function placePoolBet(wagerId) {
+  const w = S.wagers[wagerId]; if (!w) return;
+  const player = me(); if (!player) return;
+  const amt = Math.floor(+document.getElementById('poolAmt').value);
+  if (!amt || amt < 1)           return toast('Enter a valid amount');
+  if (amt > (player.balance||0)) return toast('Not enough dough');
+  if (w.status !== 'open')       return toast('Bet is no longer open');
+  if (overdue(w))                return toast('Past close date');
+  if (!_db) return toast('Not connected');
+
+  const betId = _db.ref(`${DB_PATH}/wagers/${wagerId}/poolBets`).push().key;
+  const updates = {};
+  updates[`${DB_PATH}/wagers/${wagerId}/poolBets/${betId}`] = {
+    playerId: player.id, side: _poolSide, amount: amt, placedAt: TS()
+  };
+  updates[`${DB_PATH}/players/${player.id}/balance`] = (player.balance||0) - amt;
+  _db.ref().update(updates).then(() => {
+    closeSheet();
+    toast(`Bet ${fmt(amt)} on ${_poolSide}`);
+  }).catch(e => { console.error('placePoolBet:', e); toast('Bet failed — try again'); });
 }
 
 // ── SYNC ──────────────────────────────────────────────────────────────────
@@ -1641,7 +1876,6 @@ function attachDataListeners() {
   _db.ref(`${DB_PATH}/wagers`).on('value', snap => {
     applySnap(snap, 'wagers');
     renderAll();
-    maybeSettleAll();
   }, e => console.error('wagers sub:', e));
 
   if (isAdmin()) {

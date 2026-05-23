@@ -392,7 +392,7 @@ body {
   font-size: 14px; font-weight: 500;
   opacity: 0; pointer-events: none;
   transition: opacity .2s, transform .2s;
-  z-index: 200; white-space: nowrap;
+  z-index: 2000; white-space: nowrap;
   max-width: calc(100vw - 40px);
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -504,6 +504,17 @@ hr { border: none; border-top: 1px solid var(--border-faint); margin: 14px 0; }
   font-size: 11px; font-weight: 600; letter-spacing: .18em;
   text-transform: uppercase; color: var(--text-3);
   margin-bottom: 12px;
+}
+.auth-error {
+  background: var(--no-light);
+  color: var(--no);
+  border: 1px solid var(--no-border);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-top: 12px;
+  text-align: left;
+  word-break: break-word;
 }
 </style>
 </head>
@@ -663,6 +674,7 @@ function renderAuthScreen() {
           <input type="email" id="reqEmail" name="email" placeholder="Your Google email" autocomplete="email" inputmode="email">
         </div>
         <button type="submit" id="reqSubmit" class="btn-primary-auth">Request access</button>
+        <div id="reqError" class="auth-error" style="display:none"></div>
       </form>
       <div class="auth-divider">or</div>
       <div class="auth-section-label">Already approved?</div>
@@ -697,12 +709,24 @@ function renderAuthScreen() {
 // Guard against double-submit while a write is in flight.
 let _submitInFlight = false;
 
+function showReqError(msg) {
+  const el = document.getElementById('reqError');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function clearReqError() {
+  const el = document.getElementById('reqError');
+  if (el) { el.style.display = 'none'; el.textContent = ''; }
+}
+
 // formEl is the <form> element (passed by the listener). FormData reads from
 // the form's own snapshot of inputs, which is more reliable than .value
 // immediately after iOS autofill commits.
 function submitRequest(formEl) {
   if (_submitInFlight) return;
   formEl = formEl || document.getElementById('reqForm');
+  clearReqError();
 
   // iOS autofill quirk: blur the active input so the autofill UI doesn't
   // capture the next tap. Reading FormData also forces Safari to "commit"
@@ -717,9 +741,9 @@ function submitRequest(formEl) {
   let name  = (fd?.get('name')  || nameInput?.value  || '').toString().trim();
   let email = (fd?.get('email') || emailInput?.value || '').toString().trim().toLowerCase();
 
-  if (!name)                          return toast('Please enter your name');
-  if (!email || !email.includes('@')) return toast('Please enter a valid email');
-  if (!_db)                           return toast('Not connected — try again');
+  if (!name)                          { showReqError('Please enter your name');         return; }
+  if (!email || !email.includes('@')) { showReqError('Please enter a valid email');     return; }
+  if (!_db)                           { showReqError('Not connected — refresh the page'); return; }
 
   // Immediate visible feedback so the user knows the tap registered, even
   // before the network round-trip completes. We don't transition state
@@ -751,10 +775,11 @@ function submitRequest(formEl) {
       submitBtn.textContent = 'Request access';
       submitBtn.style.opacity = '';
     }
-    // Show the actual error so the user (and we) can see what's wrong
-    // instead of a silent "Submission failed". Most likely culprits:
-    // PERMISSION_DENIED (rules issue) or network errors.
-    toast('Failed: ' + (e?.code || e?.message || 'unknown') + ' — try again');
+    // Show the actual error inline. Toast also fires (z-index now correct)
+    // but inline message stays visible until the user retries.
+    const errCode = e?.code || e?.message || 'unknown';
+    showReqError('Couldn\'t send request — ' + errCode);
+    toast('Failed: ' + errCode);
   });
 }
 

@@ -422,6 +422,21 @@ hr { border: none; border-top: 1px solid var(--border-faint); margin: 14px 0; }
 .btn-vote.yes.voted { background: var(--yes-light); }
 .btn-vote.no.voted  { background: var(--no-light); }
 .resolve-row { display: flex; gap: 10px; margin: 10px 0; }
+.participants {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin-top: 10px; padding-top: 10px;
+  border-top: 1px solid var(--border-faint);
+}
+.participant {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 12px; color: var(--text-2);
+}
+.avatar-sm {
+  width: 18px; height: 18px; border-radius: 50%;
+  color: #fff; font-size: 7px; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
 
 /* Join banner */
 .join-banner {
@@ -855,6 +870,18 @@ function renderBets() {
   el.innerHTML = banner + open.map(wagerCard).join('');
 }
 
+function renderParticipants(w) {
+  const ids = parties(w);
+  if (!ids.length) return '';
+  const names = ids.map(id => {
+    const p = S.players[id];
+    if (!p) return null;
+    return `<span class="participant"><span class="avatar-sm" style="background:${avatarColor(id)}">${initials(p.name)}</span>${esc(p.name)}</span>`;
+  }).filter(Boolean);
+  if (!names.length) return '';
+  return `<div class="participants">${names.join('')}</div>`;
+}
+
 function wagerCard(w) {
   const wtype = w.type || 'wager';
   return wtype === 'pool' ? wagerCardPool(w) : wagerCardStandard(w);
@@ -969,6 +996,7 @@ function wagerCardStandard(w) {
 
     ${action}
     ${mine}
+    ${renderParticipants(w)}
     <div class="wgr-meta">${meta}</div>
   </div>`;
 }
@@ -1025,6 +1053,7 @@ function wagerCardPool(w) {
     </div>
     ${action}
     ${mine}
+    ${renderParticipants(w)}
     <div class="wgr-meta">${meta}</div>
   </div>`;
 }

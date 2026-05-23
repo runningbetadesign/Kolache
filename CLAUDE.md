@@ -17,7 +17,7 @@ Designed to be opened, used, and closed in seconds on a phone. No accounts, no a
 ## Stack
 
 - **One file.** `index.html` is the entire app: HTML, CSS, vanilla JS, no build step, no bundler, no package.json.
-- **Firebase Realtime Database** (compat SDK v9.23.0 loaded via `<script>` tag) for shared state across devices, written under `/kolache_v2`.
+- **Firebase Realtime Database** (compat SDK v9.23.0 loaded via `<script>` tag) for shared state across devices, written under `/kolache_v3` using **per-path updates** (no whole-tree blob).
 - **localStorage** holds *only* the per-device `currentId` (which player this device is signed in as). All shared state lives in Firebase.
 - **Fonts** — Lora (serif) for questions/headings, Outfit (sans) for everything else. Loaded from Google Fonts.
 - **No framework, no build, no tests.** Edit, refresh, verify in a browser.
@@ -43,12 +43,13 @@ If you find yourself wanting to add a second file, push back — the constraint 
 
 A **wager** is the unit of content: one person proposing terms that others can take.
 
+In-app state and the RTDB shape both use objects keyed by id (not arrays). Each value carries its key as an `id` field for convenience.
+
 ```js
 S = {
-  players: Player[],
-  wagers: Wager[],
-  currentId: number | null,   // local-only: who this device is signed in as
-  _uid: number,               // monotonic id counter, also synced
+  players: { [playerId]: Player },
+  wagers:  { [wagerId]: Wager },
+  currentId: string | null,   // local-only: who this device is signed in as
 }
 
 Player = {
@@ -65,12 +66,12 @@ Wager = {
                               //   → odds = proposerStake : takerPool
                               //   → equal = even money; risk > pool = laying favorite;
                               //     risk < pool = taking underdog
-  acceptances: Acceptance[],
+  acceptances:  { [acceptanceId]: Acceptance },
   status: 'open' | 'pending' | 'disputed' | 'resolved',
   proposedOutcome: 'YES' | 'NO' | null,
   proposedBy: playerId | null,
-  confirmedBy: playerId[],    // includes the proposer of the outcome by default
-  disputedBy:  playerId[],
+  confirmedBy: { [playerId]: true },   // proposer auto-confirms when proposing
+  disputedBy:  { [playerId]: true } | null,
   resolution: 'YES' | 'NO' | null,
   resolvedAt: number | null,
 }
@@ -82,9 +83,18 @@ Acceptance = {
 }
 ```
 
+RTDB layout:
+```
+/kolache_v3/players/{playerId}                          Player
+/kolache_v3/wagers/{wagerId}                            Wager (minus acceptances/confirmedBy/disputedBy)
+/kolache_v3/wagers/{wagerId}/acceptances/{acceptanceId} Acceptance
+/kolache_v3/wagers/{wagerId}/confirmedBy/{playerId}     true
+/kolache_v3/wagers/{wagerId}/disputedBy/{playerId}      true
+```
+
 Categories are a fixed list: `Sports, Entertainment, Pop Culture, Finance, Science, Tech, Other`.
 
-**Schema note.** Old data under the Firebase path `/kolache` used a parimutuel `markets[]` model and is incompatible. The new app writes to `/kolache_v2` so the two don't collide.
+**Schema history.** `/kolache` was the original parimutuel `markets[]` shape. `/kolache_v2` reworked it as `wagers[]` but kept the whole-tree-blob write pattern that lost concurrent updates. `/kolache_v3` is the current per-path shape.
 
 ---
 
@@ -139,18 +149,17 @@ Plus, refunds any unmatched portion of proposer's stake.
 
 ## Sync model
 
-The sync logic in `initSync()` / `saveState()` exists because of one specific bug: naive Firebase listeners cause writes to bounce back as "remote updates" and overwrite in-flight local edits.
+`initSync()` attaches two separate listeners — `/kolache_v3/players` and `/kolache_v3/wagers` — and re-renders when either changes. There is **no `saveState()`** function and **no whole-tree write**: every mutation writes only the paths it touches, using `push()` for new children and `update({...})` with a `{path: value, ...}` map for atomic multi-location changes.
 
-The fix:
+Why this matters: the previous design `set()` the entire `{players, wagers, ...}` blob on every action. Two devices acting within the same tick would each write their own copy of "the world," and the second write would clobber the first — bets, balances, and confirmations could silently disappear. Per-path writes don't clobber unrelated nodes, so concurrent actions both land.
 
-1. Each browser tab generates a `SESSION_ID` (random 8 chars) on load.
-2. Every `saveState()` writes `{ players, wagers, _uid, _by: SESSION_ID }` to `/kolache_v2`.
-3. The `.on('value')` listener checks `d._by === SESSION_ID` and skips its own echoes.
-4. Real remote updates (from other devices) overwrite `S.players`, `S.wagers`, `S._uid` and re-render.
+Specific patterns:
+- **New entity** (player, wager, acceptance): `ref(parent).push().key` → `update({...})` placing the new value at the new key and any sibling writes (e.g. balance debit) in the same atomic update.
+- **Field change** (status, proposedBy, confirmedBy/{pid}): targeted `update({path: value})`.
+- **Map membership** (`confirmedBy`, `disputedBy`): values are objects keyed by playerId with `true` as the value. To "remove from" the map, write `null` at that path.
+- **Settlement** runs from inside the wagers listener (`maybeSettleAll`) whenever a snapshot shows a wager that is `pending`, has no disputes, and has every party confirmed. A `transaction()` on `wager/{id}/status` flips `pending → resolved` so only one device's payouts apply across all clients.
 
-Don't "simplify" this by removing `_by` / `SESSION_ID` — it will reintroduce the echo bug. The Diet-tracking-style amnesia where a write you just made bounces back and clobbers the next write is exactly what this prevents.
-
-Render order in `initSync()` also matters: render immediately from empty state (or whatever is in `localStorage` for `currentId`) before waiting on Firebase, so the screen is never blank.
+Render order in `initSync()` matters: render immediately from empty state (or whatever's in `localStorage` for `currentId`) before waiting on Firebase, so the screen is never blank.
 
 ---
 
@@ -174,8 +183,8 @@ Inline `onclick="..."` handlers reference top-level functions. Keep new function
 - **YES is green (`--yes`), NO is reddish-brown (`--no`).** Keep that mapping anywhere new YES/NO UI shows up.
 - **Money** is always rendered via `fmt(n)` → `"1,234 dough"`. Don't print raw numbers.
 - **HTML escaping** — every interpolated player/wager string runs through `esc()`. New templates must do the same.
-- **IDs** come from the synced `uid()` counter (`S._uid++`), not `Date.now()` — Firebase needs them stable across clients.
-- **Dates** — `closeDate` is a `YYYY-MM-DD` string from a date input; timestamps (`createdAt`, `resolvedAt`, `a.acceptedAt`, `joinedAt`) are `Date.now()` ms.
+- **IDs** are RTDB push keys (`ref(parent).push().key`) — globally unique strings, no shared counter needed.
+- **Dates** — `closeDate` is a `YYYY-MM-DD` string from a date input; timestamps (`createdAt`, `resolvedAt`, `a.acceptedAt`, `joinedAt`) use `firebase.database.ServerValue.TIMESTAMP` via the `TS()` helper (resolves to server-side ms on write).
 - **Balance debits are eager.** Proposer debit on create. Taker debit on accept. Settlement only adds back — it never reaches into anyone's balance to subtract.
 
 ---
@@ -185,7 +194,7 @@ Inline `onclick="..."` handlers reference top-level functions. Keep new function
 1. Edit `index.html`.
 2. Open it in a browser (`open index.html` on macOS, or drag into any browser).
 3. Open a second tab / private window as another player to test sync + accept flow.
-4. To wipe state: clear the `/kolache_v2` node in Firebase + clear `localStorage`.
+4. To wipe state: clear the `/kolache_v3` node in Firebase + clear `localStorage`.
 
 Don't introduce: a build step, a bundler, a framework, additional dependencies, a test harness, or split files. If you genuinely need one of those, raise it before doing the work.
 
@@ -195,10 +204,21 @@ Don't introduce: a build step, a bundler, a framework, additional dependencies, 
 
 - Real money / payments / KYC
 - Parimutuel pools or crowd-priced odds (the previous shape — deliberately removed)
-- User accounts, auth, OAuth, email
 - Push notifications / native shells
 - Server-side logic — Firebase Realtime DB is the entire backend
 - A build pipeline of any kind
-- Multi-room / multi-group support (one shared `/kolache_v2` node, everyone is in the same room)
+- Multi-room / multi-group support (one shared `/kolache_v3` node, everyone is in the same room)
 - Comment threads, reactions, social features beyond standings
 - Dispute-resolution voting / arbitration (disputes just flag the wager; humans resolve out-of-band)
+
+## Auth and access (planned, not yet built)
+
+The app is a private friend-group game and needs to keep strangers out. Planned approach:
+
+- **Google sign-in** via Firebase Auth (replaces the current "pick a name from a list" identity model).
+- **Allowlist** at `/kolache_v3/allowlist/{emailKeyed}` — only signed-in users whose email is on the list can read/write game state.
+- **Self-serve request flow**: a friend signs in with Google, the app sees their email isn't on the allowlist, writes a `/kolache_v3/pending/{emailKeyed}` request, and shows a "waiting for approval" screen.
+- **Admin tab** visible only when the signed-in user's email matches a hardcoded `ADMIN_EMAIL`. Shows pending requests with Approve / Deny actions.
+- **RTDB security rules** enforce the allowlist server-side so that bypassing the UI doesn't get you in.
+
+The CLAUDE.md previously listed "user accounts / auth / OAuth" as non-goals; that's been superseded by the friend-group access goal.

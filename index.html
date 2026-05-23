@@ -136,7 +136,10 @@ body {
 }
 .wgr-subline {
   font-size: 12px; color: var(--text-3); margin-bottom: 10px;
+  line-height: 1.5;
 }
+.pool-yes-num { color: var(--yes); font-weight: 600; }
+.pool-no-num  { color: var(--no);  font-weight: 600; }
 
 /* ── WAGER LINE ── */
 .wgr-line {
@@ -1121,7 +1124,10 @@ function wagerCardPool(w) {
   }
 
   const editBtn = isAdmin() && w.status === 'open' ? `<button class="btn-link" style="font-size:12px;padding:0" onclick="openEditWager('${w.id}')">Edit</button>` : '';
-  const sub = [`Pot: ${fmt(total)}`, fmtDate(w.closeDate)].join(' · ');
+  const poolLine = total
+    ? `<span class="pool-yes-num">${fmt(yesTotal)} YES</span> · <span class="pool-no-num">${fmt(noTotal)} NO</span> · ${fmt(total)} total`
+    : 'No bets yet';
+  const sub = [poolLine, fmtDate(w.closeDate)].join(' · ');
 
   return `<div class="card">
     <div class="wgr-category" style="display:flex;justify-content:space-between;align-items:center">
@@ -1130,10 +1136,6 @@ function wagerCardPool(w) {
     </div>
     <div class="wgr-question">${esc(w.question)}</div>
     <div class="wgr-subline">${sub}${past && w.status === 'open' ? ' · <span class="badge-overdue">Needs resolution</span>' : ''}</div>
-    <div class="pool-summary">
-      <div class="pool-side yes"><strong>${fmt(yesTotal)}</strong><br>YES</div>
-      <div class="pool-side no"><strong>${fmt(noTotal)}</strong><br>NO</div>
-    </div>
     ${renderParticipants(w)}
     ${action}
   </div>`;

@@ -602,7 +602,7 @@ const me         = () => myUid() && S.players[myUid()] ? S.players[myUid()] : nu
 const esc  = s  => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const fmt  = n  => `${Math.round(n).toLocaleString()} dough`;
 const initials = name => name.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0,2);
-const fmtDate  = d => new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+const fmtDate  = d => { const dt = new Date(d); return isNaN(dt) ? '—' : dt.toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}); };
 const overdue  = w => new Date(w.closeDate) < new Date();
 const acceptanceList = w => w && w.acceptances ? Object.values(w.acceptances) : [];
 
@@ -1133,9 +1133,9 @@ function openPlayerList() {
 let _pickedSide = 'YES';
 function openCreateWager() {
   if (!me()) { toast('Setting up your account…'); return; }
-  const d = new Date(); d.setDate(d.getDate() + 7);
-  const defDate = d.toISOString().slice(0,10);
-  const today   = new Date().toISOString().slice(0,10);
+  const d = new Date(); d.setDate(d.getDate() + 7); d.setHours(23, 59, 0, 0);
+  const defDT = d.toISOString().slice(0,16);
+  const nowDT = new Date().toISOString().slice(0,16);
   _pickedSide = 'YES';
   openSheet(`<div class="sheet-title">New Bet</div>
     <div class="field">
@@ -1165,8 +1165,8 @@ function openCreateWager() {
     </div>
     <p class="helper" id="oddsHint" style="margin-top:-6px;margin-bottom:14px">Even money — anyone can take up to ${fmt(me().balance)}.</p>
     <div class="field">
-      <label class="field-label">Close date</label>
-      <input type="date" id="wD" value="${defDate}" min="${today}">
+      <label class="field-label">Closes at</label>
+      <input type="datetime-local" id="wD" value="${defDT}" min="${nowDT}">
     </div>
     <button class="btn-primary" onclick="createWager()">Post Bet</button>`);
   setTimeout(() => document.getElementById('wQ')?.focus(), 300);

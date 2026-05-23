@@ -21,17 +21,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: w9jds/firebase-action@v14.10.1
         with:
-          node-version: 20
-      - name: Install Firebase CLI
-        run: npm install -g firebase-tools
-      - name: Write service account credentials
+          args: deploy --only database --project kolache-e58fa --non-interactive
         env:
-          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KOLACHE_E58FA }}
-        run: |
-          printf '%s' "$SA" > "$RUNNER_TEMP/sa.json"
-      - name: Deploy database rules
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
-        run: firebase deploy --only database --project kolache-e58fa --non-interactive
+          GCP_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KOLACHE_E58FA }}
+          PROJECT_ID: kolache-e58fa

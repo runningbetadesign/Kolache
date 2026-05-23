@@ -61,28 +61,28 @@ body {
   color: #f5f0e6;
 }
 .player-pill {
-  display: flex; align-items: center; gap: 7px;
-  padding: 5px 10px 5px 5px;
-  border: 1px solid rgba(255,255,255,.15);
-  border-radius: 999px;
-  background: rgba(255,255,255,.08);
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 8px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255,255,255,.12);
   cursor: pointer;
   font-family: 'Barlow', sans-serif;
   font-size: 13px; font-weight: 500;
-  color: rgba(255,255,255,.9);
-  max-width: 200px; overflow: hidden;
+  color: #fff;
+  max-width: 180px; overflow: hidden;
 }
-.player-pill:active { background: rgba(255,255,255,.15); }
+.player-pill:active { background: rgba(255,255,255,.2); }
 .avatar {
-  width: 24px; height: 24px; border-radius: 50%;
-  background: var(--dough); color: #fff;
-  font-size: 9px; font-weight: 700;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  font-size: 10px; font-weight: 700;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0; letter-spacing: .3px;
 }
-.pill-name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pill-dough { color: var(--dough); font-size: 12px; font-weight: 600; white-space: nowrap; }
-.pill-caret { opacity: .4; flex-shrink: 0; }
+.pill-name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+.pill-dough { color: #e8c55a; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.pill-caret { display: none; }
 
 /* ── TAB BAR ── */
 .tab-bar {

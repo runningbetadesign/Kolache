@@ -901,8 +901,10 @@ function wagerCard(w) {
     </div>`;
   }
 
+  const editBtn = isMine && w.status === 'open' ? `<button class="btn-link" style="font-size:12px;padding:0" onclick="openEditWager('${w.id}')">Edit</button>` : '';
+
   return `<div class="card">
-    <div class="wgr-category">${esc(w.category)}</div>
+    <div class="wgr-category" style="display:flex;justify-content:space-between;align-items:center">${esc(w.category)} ${editBtn}</div>
     <div class="wgr-question">${esc(w.question)}</div>
 
     <div class="wgr-line">
@@ -1224,6 +1226,47 @@ function createWager() {
     closeSheet();
     toast('Bet posted!');
   }).catch(e => { console.error('createWager:', e); toast('Failed to post — try again'); });
+}
+
+// ── EDIT WAGER (creator only, open status) ────────────────────────────────
+function openEditWager(wagerId) {
+  const w = S.wagers[wagerId]; if (!w) return;
+  const player = me(); if (!player || player.id !== w.proposerId) return;
+  const closeDT = w.closeDate ? (w.closeDate.length > 10 ? w.closeDate : w.closeDate + 'T23:59') : '';
+  const nowDT = new Date().toISOString().slice(0,16);
+  openSheet(`<div class="sheet-title">Edit Bet</div>
+    <div class="field">
+      <label class="field-label">Question</label>
+      <textarea id="eQ" maxlength="200">${esc(w.question)}</textarea>
+    </div>
+    <div class="field">
+      <label class="field-label">Category</label>
+      <select id="eC">${CATS.map(c => `<option${c === w.category ? ' selected' : ''}>${c}</option>`).join('')}</select>
+    </div>
+    <div class="field">
+      <label class="field-label">Closes at</label>
+      <input type="datetime-local" id="eD" value="${closeDT}" min="${nowDT}">
+    </div>
+    <button class="btn-primary" onclick="saveWagerEdit('${wagerId}')">Save changes</button>`);
+}
+
+function saveWagerEdit(wagerId) {
+  const w = S.wagers[wagerId]; if (!w) return;
+  const player = me(); if (!player || player.id !== w.proposerId) return;
+  if (!_db) return toast('Not connected');
+  const q    = (document.getElementById('eQ')?.value || '').trim();
+  const cat  = document.getElementById('eC')?.value;
+  const date = document.getElementById('eD')?.value;
+  if (!q)    return toast('Question can\'t be empty');
+  if (!date) return toast('Pick a close time');
+  const updates = {};
+  updates[`${DB_PATH}/wagers/${wagerId}/question`]  = q;
+  updates[`${DB_PATH}/wagers/${wagerId}/category`]   = cat;
+  updates[`${DB_PATH}/wagers/${wagerId}/closeDate`]  = date;
+  _db.ref().update(updates).then(() => {
+    closeSheet();
+    toast('Bet updated');
+  }).catch(e => { console.error('editWager:', e); toast('Update failed'); });
 }
 
 // ── ACCEPT WAGER ──────────────────────────────────────────────────────────

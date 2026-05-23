@@ -6,7 +6,9 @@ Agent context for Claude Code. Read this before touching anything.
 
 ## What this is
 
-A casual, group-of-friends prediction market. Players bet "dough" (play money) YES/NO on questions they post for each other. Pari-mutuel payouts: winners split the entire pool proportionally to their stake on the winning side.
+A casual friend-to-friend wager app. One person posts a bet ("I risk $20 to win $10 that the Lakers win"); friends each take a piece of it at the posted odds. When the outcome is known, everyone confirms it and dough moves.
+
+It's **not** a prediction market and **not** parimutuel. Each acceptance is a tiny 1-on-1 contract between the proposer and that taker, settled at the proposer's posted odds. No pool pricing, no implied probabilities from crowd flow.
 
 Designed to be opened, used, and closed in seconds on a phone. No accounts, no auth, no real money.
 
@@ -15,10 +17,10 @@ Designed to be opened, used, and closed in seconds on a phone. No accounts, no a
 ## Stack
 
 - **One file.** `index.html` is the entire app: HTML, CSS, vanilla JS, no build step, no bundler, no package.json.
-- **Firebase Realtime Database** (compat SDK v9.23.0 loaded via `<script>` tag) for shared state across devices.
+- **Firebase Realtime Database** (compat SDK v9.23.0 loaded via `<script>` tag) for shared state across devices, written under `/kolache_v2`.
 - **localStorage** holds *only* the per-device `currentId` (which player this device is signed in as). All shared state lives in Firebase.
-- **Fonts** — Lora (serif) for headings/questions, Outfit (sans) for everything else. Loaded from Google Fonts.
-- **No framework, no build, no tests.** Edit, refresh the file, verify in a browser.
+- **Fonts** — Lora (serif) for questions/headings, Outfit (sans) for everything else. Loaded from Google Fonts.
+- **No framework, no build, no tests.** Edit, refresh, verify in a browser.
 
 The Firebase config is embedded directly in `index.html` (the project is intentionally open — there's no secret to leak that isn't already client-visible in any Firebase web app).
 
@@ -37,13 +39,14 @@ If you find yourself wanting to add a second file, push back — the constraint 
 
 ---
 
-## Data model
+## Domain model
+
+A **wager** is the unit of content: one person proposing terms that others can take.
 
 ```js
-// Shared state (mirrored to Firebase under /kolache)
 S = {
   players: Player[],
-  markets: Market[],
+  wagers: Wager[],
   currentId: number | null,   // local-only: who this device is signed in as
   _uid: number,               // monotonic id counter, also synced
 }
@@ -53,39 +56,84 @@ Player = {
   wins, losses, joinedAt,
 }
 
-Market = {
-  id, question, category, closeDate,
-  creatorId: number | null,   // null = the built-in seed market (anyone can resolve it)
-  status: 'open' | 'resolved',
+Wager = {
+  id, question, category, closeDate, createdAt,
+  proposerId,
+  proposerSide: 'YES' | 'NO',
+  proposerStake: number,      // how much the proposer puts up (escrowed at creation)
+  takerPool:     number,      // total amount takers can collectively put in
+                              //   → odds = proposerStake : takerPool
+                              //   → equal = even money; risk > pool = laying favorite;
+                              //     risk < pool = taking underdog
+  acceptances: Acceptance[],
+  status: 'open' | 'pending' | 'disputed' | 'resolved',
+  proposedOutcome: 'YES' | 'NO' | null,
+  proposedBy: playerId | null,
+  confirmedBy: playerId[],    // includes the proposer of the outcome by default
+  disputedBy:  playerId[],
   resolution: 'YES' | 'NO' | null,
   resolvedAt: number | null,
-  payouts: { [playerId]: number },   // populated at resolution
-  bets: Bet[],
-  createdAt, seed?: boolean,
 }
 
-Bet = { id, playerId, side: 'YES' | 'NO', amount, at }
+Acceptance = {
+  id, takerId,
+  takerStake: number,         // how much THIS taker put in (debited at acceptance time)
+  acceptedAt: number,
+}
 ```
 
 Categories are a fixed list: `Sports, Entertainment, Pop Culture, Finance, Science, Tech, Other`.
 
+**Schema note.** Old data under the Firebase path `/kolache` used a parimutuel `markets[]` model and is incompatible. The new app writes to `/kolache_v2` so the two don't collide.
+
 ---
 
-## Pari-mutuel payout
+## Matched-book odds
 
-When a market resolves to a side:
+The proposer specifies two numbers: **I risk $A** and **to win $B**.
+
+- $A is debited from the proposer's balance at creation and held as escrow.
+- $B is the total amount takers can collectively put up.
+- Anyone can take any portion of $B (limited only by their own balance) at the same A:B odds.
+
+When a taker stakes $t (where `t ≤ remaining = B − Σ takerStake`), the proposer's matched exposure for that acceptance is:
 
 ```
-for each winning bet b:
-  payout = floor(b.amount / winPool * totalPool)
-  player.balance += payout
-
-# W/L: each player who bet on the winning side gets +1 win.
-# Players who only bet on the losing side get +1 loss.
-# A player who bet on both sides and won counts as a win only.
+propExposure = round(t × A / B)
 ```
 
-If nobody bet on the winning side, all bets are refunded. Losing-side dough was already debited when the bet was placed (in `placeBet()`), so resolution only *adds* to balances — never subtracts.
+The proposer's *unmatched* escrow (the portion of $A that no taker ever matched) is refunded when the wager settles.
+
+Examples:
+- "Risk 20 to win 20" → even money. One taker stakes $20 → proposer's $20 fully matched. Two takers of $10 each → each carries $10 of proposer's exposure.
+- "Risk 40 to win 20" → 2:1 favorite. A taker staking $10 puts proposer on the hook for $20.
+- "Risk 10 to win 20" → 1:2 underdog. A taker staking $20 puts proposer on the hook for $10.
+
+---
+
+## Lifecycle
+
+```
+proposer posts          → status: 'open'        (proposerStake debited)
+taker accepts a piece   → status: 'open'        (takerStake debited; multiple acceptances allowed
+                                                 until takerPool is fully matched)
+proposer cancels (only allowed if 0 acceptances) → wager removed, proposerStake refunded
+
+any party proposes outcome (only after closeDate) → status: 'pending'
+                                                    proposer of outcome auto-confirms
+other parties Confirm   → added to confirmedBy
+other parties Dispute   → added to disputedBy, status: 'disputed'
+
+when every party (proposer + every unique taker) is in confirmedBy
+   AND disputedBy is empty                       → settle()
+disputed wagers can be re-proposed (overwriting proposedOutcome) and the cycle restarts
+```
+
+`settle()` does, for each acceptance:
+- proposer's side won → proposer.balance += propExp + takerStake; proposer.wins++, taker.losses++
+- proposer's side lost → taker.balance += takerStake + propExp; taker.wins++, proposer.losses++
+
+Plus, refunds any unmatched portion of proposer's stake.
 
 ---
 
@@ -96,11 +144,11 @@ The sync logic in `initSync()` / `saveState()` exists because of one specific bu
 The fix:
 
 1. Each browser tab generates a `SESSION_ID` (random 8 chars) on load.
-2. Every `saveState()` writes `{ players, markets, _uid, _by: SESSION_ID }` to `/kolache`.
+2. Every `saveState()` writes `{ players, wagers, _uid, _by: SESSION_ID }` to `/kolache_v2`.
 3. The `.on('value')` listener checks `d._by === SESSION_ID` and skips its own echoes.
-4. Real remote updates (from other devices) overwrite `S.players`, `S.markets`, `S._uid` and re-render.
+4. Real remote updates (from other devices) overwrite `S.players`, `S.wagers`, `S._uid` and re-render.
 
-Don't "simplify" this by removing `_by` / `SESSION_ID` — it will reintroduce the echo bug. Recent commit history (`45ab15a`, `78ee999`, `8af7961`) is a record of multiple failed simpler approaches.
+Don't "simplify" this by removing `_by` / `SESSION_ID` — it will reintroduce the echo bug. The Diet-tracking-style amnesia where a write you just made bounces back and clobbers the next write is exactly what this prevents.
 
 Render order in `initSync()` also matters: render immediately from empty state (or whatever is in `localStorage` for `currentId`) before waiting on Firebase, so the screen is never blank.
 
@@ -109,9 +157,9 @@ Render order in `initSync()` also matters: render immediately from empty state (
 ## UI shell
 
 - **Header** — Kolache wordmark + player pill (tap to switch / add player).
-- **Tab bar** — Markets / Standings / Resolved. The FAB (+) only shows on Markets.
+- **Tab bar** — Bets / Standings / Resolved. The FAB (+) only shows on Bets.
 - **Views** — three sibling `<div class="view">` containers; `switchTab()` toggles `.active`.
-- **Sheet** — a single bottom sheet (`#sheet` + `#backdrop`) reused for every modal flow (player list, add player, create market, bet, resolve). Content is injected via `openSheet(html)`.
+- **Sheet** — a single bottom sheet (`#sheet` + `#backdrop`) reused for every modal flow (player list, add player, create wager, accept, propose outcome). Content is injected via `openSheet(html)`.
 - **Toast** — single `#toast` element, fired via `toast(msg)`.
 
 All rendering is HTML-string templating with `esc()` for user content. There is no virtual DOM and no component framework — `render()` rebuilds the active views from scratch and re-attaches via `innerHTML`.
@@ -122,12 +170,13 @@ Inline `onclick="..."` handlers reference top-level functions. Keep new function
 
 ## Conventions
 
-- **Theming** is via CSS custom properties on `:root` — `--bg`, `--surface`, `--text-1/2/3`, `--accent`, `--yes`, `--no`, `--dough`, plus YES/NO light/border variants. Never hardcode hex; reuse the tokens.
+- **Theming** is via CSS custom properties on `:root` — `--bg`, `--surface`, `--text-1/2/3`, `--accent`, `--yes`, `--no`, `--dough`, plus YES/NO light/border variants, plus `--pending`/`--dispute`/`--warn` status colors. Never hardcode hex; reuse the tokens.
 - **YES is green (`--yes`), NO is reddish-brown (`--no`).** Keep that mapping anywhere new YES/NO UI shows up.
 - **Money** is always rendered via `fmt(n)` → `"1,234 dough"`. Don't print raw numbers.
-- **HTML escaping** — every interpolated player/market string runs through `esc()`. New templates must do the same.
-- **IDs** come from the synced `uid()` counter (`S._uid++`), not `Date.now()` — Firebase needs them to be stable across clients.
-- **Dates** — `closeDate` is a `YYYY-MM-DD` string from a date input; timestamps (`createdAt`, `resolvedAt`, `bet.at`, `joinedAt`) are `Date.now()` ms.
+- **HTML escaping** — every interpolated player/wager string runs through `esc()`. New templates must do the same.
+- **IDs** come from the synced `uid()` counter (`S._uid++`), not `Date.now()` — Firebase needs them stable across clients.
+- **Dates** — `closeDate` is a `YYYY-MM-DD` string from a date input; timestamps (`createdAt`, `resolvedAt`, `a.acceptedAt`, `joinedAt`) are `Date.now()` ms.
+- **Balance debits are eager.** Proposer debit on create. Taker debit on accept. Settlement only adds back — it never reaches into anyone's balance to subtract.
 
 ---
 
@@ -135,8 +184,8 @@ Inline `onclick="..."` handlers reference top-level functions. Keep new function
 
 1. Edit `index.html`.
 2. Open it in a browser (`open index.html` on macOS, or drag into any browser).
-3. Open a second tab / private window to test sync.
-4. To wipe state: clear the `/kolache` node in Firebase + clear `localStorage`.
+3. Open a second tab / private window as another player to test sync + accept flow.
+4. To wipe state: clear the `/kolache_v2` node in Firebase + clear `localStorage`.
 
 Don't introduce: a build step, a bundler, a framework, additional dependencies, a test harness, or split files. If you genuinely need one of those, raise it before doing the work.
 
@@ -145,9 +194,11 @@ Don't introduce: a build step, a bundler, a framework, additional dependencies, 
 ## Non-goals
 
 - Real money / payments / KYC
+- Parimutuel pools or crowd-priced odds (the previous shape — deliberately removed)
 - User accounts, auth, OAuth, email
 - Push notifications / native shells
 - Server-side logic — Firebase Realtime DB is the entire backend
 - A build pipeline of any kind
-- Multi-room / multi-group support (one shared `/kolache` node, everyone is in the same room)
+- Multi-room / multi-group support (one shared `/kolache_v2` node, everyone is in the same room)
 - Comment threads, reactions, social features beyond standings
+- Dispute-resolution voting / arbitration (disputes just flag the wager; humans resolve out-of-band)

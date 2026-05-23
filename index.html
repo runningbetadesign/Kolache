@@ -465,6 +465,46 @@ hr { border: none; border-top: 1px solid var(--border-faint); margin: 14px 0; }
   margin: 40px auto;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+.auth-form {
+  display: flex; flex-direction: column; gap: 10px;
+  margin-bottom: 16px;
+}
+.auth-form input {
+  width: 100%; padding: 12px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 15px; color: var(--text-1);
+  background: var(--surface); outline: none;
+  -webkit-appearance: none; appearance: none;
+}
+.auth-form input:focus { border-color: var(--accent); }
+.auth-divider {
+  display: flex; align-items: center; gap: 12px;
+  color: var(--text-3); font-size: 11px;
+  letter-spacing: .15em; text-transform: uppercase;
+  margin: 28px 0 16px;
+}
+.auth-divider::before, .auth-divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+.btn-primary-auth {
+  display: block; width: 100%;
+  padding: 13px 20px; border-radius: 10px;
+  border: none; background: var(--accent); color: #fff;
+  font-family: 'Outfit', sans-serif;
+  font-size: 15px; font-weight: 600; cursor: pointer;
+}
+.btn-primary-auth:active { opacity: .85; }
+.btn-google.full {
+  display: flex; width: 100%;
+  justify-content: center;
+}
+.auth-section-label {
+  font-size: 11px; font-weight: 600; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--text-3);
+  margin-bottom: 12px;
+}
 </style>
 </head>
 <body>
@@ -594,29 +634,78 @@ function renderAll() {
   renderAdmin();
 }
 
+const GOOGLE_ICON = `<svg viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.79 2.72v2.26h2.9c1.7-1.56 2.69-3.87 2.69-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.46-.8 5.95-2.18l-2.9-2.26c-.81.54-1.83.86-3.05.86-2.35 0-4.34-1.59-5.05-3.72H.96v2.34A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.95 10.7a5.41 5.41 0 0 1 0-3.4V4.96H.96a9 9 0 0 0 0 8.08l2.99-2.34z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58A9 9 0 0 0 9 0 9 9 0 0 0 .96 4.96l2.99 2.34C4.66 5.17 6.65 3.58 9 3.58z"/></svg>`;
+
 function renderAuthScreen() {
   const screen = document.getElementById('authScreen');
   const body   = document.getElementById('authBody');
   screen.classList.add('show');
   if (S.authStatus === 'init') {
     body.innerHTML = `<div class="auth-spinner"></div>`;
-  } else if (S.authStatus === 'signedout') {
+    return;
+  }
+  if (S.authStatus === 'signedout') {
+    // Request-to-join is the primary CTA. Sign-in is the secondary path
+    // for already-approved users.
     body.innerHTML = `
-      <p class="auth-msg">Sign in with your Google account to join the game.</p>
-      <button class="btn-google" onclick="signIn()">
-        <svg viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.79 2.72v2.26h2.9c1.7-1.56 2.69-3.87 2.69-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.46-.8 5.95-2.18l-2.9-2.26c-.81.54-1.83.86-3.05.86-2.35 0-4.34-1.59-5.05-3.72H.96v2.34A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.95 10.7a5.41 5.41 0 0 1 0-3.4V4.96H.96a9 9 0 0 0 0 8.08l2.99-2.34z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58A9 9 0 0 0 9 0 9 9 0 0 0 .96 4.96l2.99 2.34C4.66 5.17 6.65 3.58 9 3.58z"/></svg>
-        Sign in with Google
-      </button>
-      <p class="auth-msg subtle">Kolache is a private friend group. If you're not on the list yet, the admin will need to approve you after you sign in.</p>
+      <p class="auth-msg">Kolache is invite-only. Request access below and the admin will let you in.</p>
+      <div class="auth-section-label">New here? Request access</div>
+      <div class="auth-form">
+        <input type="text" id="reqName" placeholder="Your name" maxlength="40" autocomplete="name" autocapitalize="words">
+        <input type="email" id="reqEmail" placeholder="Your Google email" autocomplete="email" inputmode="email">
+      </div>
+      <button class="btn-primary-auth" onclick="submitRequest()">Request access</button>
+      <div class="auth-divider">or</div>
+      <div class="auth-section-label">Already approved?</div>
+      <button class="btn-google full" onclick="signIn()">${GOOGLE_ICON} Sign in with Google</button>
     `;
-  } else if (S.authStatus === 'pending') {
+    setTimeout(() => document.getElementById('reqName')?.focus(), 80);
+    return;
+  }
+  if (S.authStatus === 'requested') {
+    body.innerHTML = `
+      <p class="auth-msg">Got it — your request was sent.</p>
+      <p class="auth-msg">Once the admin approves you, come back here and sign in with Google using the same email.</p>
+      <button class="btn-google full" onclick="signIn()">${GOOGLE_ICON} Sign in with Google</button>
+      <button class="btn-link" onclick="backToRequest()" style="margin-top:6px">Use a different email</button>
+    `;
+    return;
+  }
+  if (S.authStatus === 'pending') {
+    // Signed in via Google but not on the allowlist yet.
     const name = S.authUser?.displayName || S.authUser?.email || 'friend';
     body.innerHTML = `
       <p class="auth-msg">Hi, <strong>${esc(name)}</strong>.</p>
-      <p class="auth-msg">Your access request was sent. You'll be let in once the admin approves you — this page will switch over automatically.</p>
+      <p class="auth-msg">Your access request was logged. You'll be let in once the admin approves you — this page will switch over automatically.</p>
       <button class="btn-link" onclick="signOut()">Sign out</button>
     `;
   }
+}
+
+function submitRequest() {
+  const name  = (document.getElementById('reqName')?.value  || '').trim();
+  const email = (document.getElementById('reqEmail')?.value || '').trim().toLowerCase();
+  if (!name)                       return toast('Please enter your name');
+  if (!email || !email.includes('@')) return toast('Please enter a valid email');
+  if (!_db)                        return toast('Not connected — try again');
+  const ek = emailKey(email);
+  _db.ref(`${DB_PATH}/pending/${ek}`).set({
+    name, email, requestedAt: TS()
+  }).then(() => {
+    try { localStorage.setItem('kolache_requested', email); } catch(e) {}
+    S.authStatus = 'requested';
+    renderAll();
+    toast('Request sent!');
+  }).catch(e => {
+    console.error('submitRequest:', e);
+    toast('Submission failed — try again');
+  });
+}
+
+function backToRequest() {
+  try { localStorage.removeItem('kolache_requested'); } catch(e) {}
+  S.authStatus = 'signedout';
+  renderAll();
 }
 
 function renderPill() {
@@ -1335,6 +1424,7 @@ function handleSignedIn(user) {
   const isAdminUser = user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
   _db.ref(`${DB_PATH}/allowlist/${ek}`).once('value').then(snap => {
     if (snap.val() === true || isAdminUser) {
+      try { localStorage.removeItem('kolache_requested'); } catch(e) {}
       S.authStatus = 'allowed';
       ensurePlayerRecord(user);
       attachDataListeners();
@@ -1372,6 +1462,7 @@ function attachSelfAllowlistListener() {
     _selfAllowlistListener = null;
     // Clean up our pending entry in case admin approved without removing it.
     _db.ref(`${DB_PATH}/pending/${ek}`).remove().catch(() => {});
+    try { localStorage.removeItem('kolache_requested'); } catch(e) {}
     S.authStatus = 'allowed';
     ensurePlayerRecord(S.authUser);
     attachDataListeners();
@@ -1447,7 +1538,11 @@ function initSync() {
   firebase.auth().onAuthStateChanged(user => {
     S.authUser = user || null;
     if (!user) {
-      S.authStatus = 'signedout';
+      // If this device previously submitted a request, show the "thanks,
+      // come back and sign in" screen instead of the request form.
+      let prev = null;
+      try { prev = localStorage.getItem('kolache_requested'); } catch(e) {}
+      S.authStatus = prev ? 'requested' : 'signedout';
       detachDataListeners();
       renderAll();
       return;

@@ -16,8 +16,8 @@
       "pending": {
         ".read": "auth != null && auth.token.email.toLowerCase() === 'patrick.hermiller@gmail.com'",
         "$emailKey": {
-          ".read": "auth != null && (auth.token.email.toLowerCase().replace('.', ',') === $emailKey || auth.token.email.toLowerCase() === 'patrick.hermiller@gmail.com')",
-          ".write": "auth != null && (auth.token.email.toLowerCase().replace('.', ',') === $emailKey || auth.token.email.toLowerCase() === 'patrick.hermiller@gmail.com')",
+          ".read": "auth != null && ((auth.token.email && auth.token.email.toLowerCase().replace('.', ',') === $emailKey) || auth.token.email.toLowerCase() === 'patrick.hermiller@gmail.com')",
+          ".write": "newData.hasChildren(['email','requestedAt']) || (auth != null && auth.token.email && auth.token.email.toLowerCase() === 'patrick.hermiller@gmail.com')",
           ".validate": "newData.hasChildren(['email','requestedAt']) || newData.val() === null"
         }
       },

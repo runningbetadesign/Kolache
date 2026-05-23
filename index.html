@@ -40,6 +40,7 @@
 body {
   font-family: 'Barlow', sans-serif;
   background: var(--bg);
+  background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)' opacity='.03'/%3E%3C/svg%3E");
   color: var(--text-1);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
@@ -433,8 +434,9 @@ body {
 .badge-no  { background: var(--no-light);  color: var(--no); }
 
 /* ── EMPTY ── */
-.empty { text-align: center; padding: 56px 20px; color: var(--text-3); }
-.empty-title { font-family: 'DM Serif Display', serif; font-size: 18px; font-weight: 600; color: var(--text-2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .5px; }
+.empty { text-align: center; padding: 48px 20px; color: var(--text-3); }
+.empty-icon { font-size: 36px; margin-bottom: 8px; }
+.empty-title { font-family: 'DM Serif Display', serif; font-size: 17px; color: var(--text-2); margin-bottom: 6px; }
 .empty-desc  { font-size: 14px; }
 
 /* ── TOAST ── */
@@ -459,9 +461,9 @@ hr { border: none; border-top: 1px solid var(--border-faint); margin: 14px 0; }
 .pool-side { flex: 1; padding: 10px; border-radius: 4px; text-align: center; font-size: 13px; font-family: 'DM Serif Display', serif; }
 .pool-side.yes { background: var(--yes-light); color: var(--yes); border: 1px solid var(--yes-border); }
 .pool-side.no  { background: var(--no-light);  color: var(--no);  border: 1px solid var(--no-border); }
-.type-chip { display: inline-block; padding: 1px 6px; border-radius: 2px; font-size: 9px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; margin-left: 6px; font-family: 'DM Serif Display', serif; }
-.type-chip.pool { background: #ece4d8; color: #5c4a2e; }
-.type-chip.wager { background: var(--bg); color: var(--text-3); }
+.type-chip { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 9px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; margin-left: 6px; font-family: 'Barlow', sans-serif; border: 1px dashed; }
+.type-chip.pool { background: #f5edd8; color: #7a5c1e; border-color: #c9b078; }
+.type-chip.wager { background: #e8eef4; color: #3a5068; border-color: #a8b8c8; }
 .vote-row { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
 .btn-vote { padding: 6px 14px; border-radius: 4px; border: 1.5px solid var(--border); background: var(--surface); font-family: 'DM Serif Display', serif; font-size: 12px; font-weight: 600; cursor: pointer; text-transform: uppercase; letter-spacing: .5px; }
 .btn-vote.yes { border-color: var(--yes-border); color: var(--yes); }
@@ -485,8 +487,8 @@ hr { border: none; border-top: 1px solid var(--border-faint); margin: 14px 0; }
   letter-spacing: .5px;
 }
 .filter-btn.on {
-  border-color: var(--accent); color: var(--accent);
-  background: #fde8eb; font-weight: 600;
+  border-color: var(--accent); color: #fff;
+  background: var(--accent); font-weight: 600;
 }
 .participants-sides {
   margin-top: 10px; padding-top: 10px;
@@ -661,10 +663,10 @@ hr { border: none; border-top: 1px solid var(--border-faint); margin: 14px 0; }
 </header>
 
 <nav class="tab-bar">
-  <button class="tab active" onclick="switchTab(this,'bets')">Bets</button>
-  <button class="tab" onclick="switchTab(this,'standings')">Standings</button>
-  <button class="tab" onclick="switchTab(this,'resolved')">Resolved</button>
-  <button class="tab" id="adminTab" style="display:none" onclick="switchTab(this,'admin')">Admin</button>
+  <button class="tab active" onclick="switchTab(this,'bets')">🎲 Bets</button>
+  <button class="tab" onclick="switchTab(this,'standings')">🏆 Standings</button>
+  <button class="tab" onclick="switchTab(this,'resolved')">🏁 Resolved</button>
+  <button class="tab" id="adminTab" style="display:none" onclick="switchTab(this,'admin')">⚙️ Admin</button>
 </nav>
 
 <div class="view active" id="v-bets"></div>
@@ -675,8 +677,8 @@ hr { border: none; border-top: 1px solid var(--border-faint); margin: 14px 0; }
 <!-- Auth gate: covers everything until the user signs in and is allowlisted. -->
 <div class="auth-screen" id="authScreen">
   <div class="auth-inner">
-    <div class="auth-logo">Kolache</div>
-    <div class="auth-tag">FRIENDS-ONLY WAGERING</div>
+    <div class="auth-logo">🏁 Kolache 🏁</div>
+    <div class="auth-tag">FRIENDS-ONLY WAGERING · EST. 2026</div>
     <div id="authBody"></div>
   </div>
 </div>
@@ -944,8 +946,9 @@ function joinBanner() {
   </div>`;
 }
 
-function emptyState(title, desc) {
-  return `<div class="empty"><div class="empty-title">${esc(title)}</div><p class="empty-desc">${esc(desc)}</p></div>`;
+function emptyState(title, desc, icon) {
+  icon = icon || '🏟️';
+  return `<div class="empty"><div class="empty-icon">${icon}</div><div class="empty-title">${esc(title)}</div><p class="empty-desc">${esc(desc)}</p></div>`;
 }
 
 let _betFilter = 'all';
@@ -1467,8 +1470,6 @@ function pickType(t) {
 }
 function openCreateWager() {
   if (!me()) { toast('Setting up your account…'); return; }
-  const d = new Date(); d.setDate(d.getDate() + 7); d.setHours(23, 59, 0, 0);
-  const defDT = d.toISOString().slice(0,16);
   const nowDT = new Date().toISOString().slice(0,16);
   _pickedSide = 'YES';
   _pickedType = 'wager';
@@ -1510,7 +1511,7 @@ function openCreateWager() {
     </div>
     <div class="field">
       <label class="field-label">Closes at</label>
-      <input type="datetime-local" id="wD" value="${defDT}" min="${nowDT}">
+      <input type="datetime-local" id="wD" min="${nowDT}">
     </div>
     <button class="btn-primary" onclick="createWager()">Post Bet</button>`);
   setTimeout(() => document.getElementById('wQ')?.focus(), 300);

@@ -121,8 +121,8 @@ body {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 10px;
+  padding: 14px;
+  margin-bottom: 8px;
   box-shadow: 0 1px 2px rgba(0,0,0,.05);
 }
 .wgr-category {
@@ -131,8 +131,8 @@ body {
 }
 .wgr-question {
   font-family: 'Lora', serif;
-  font-size: 16px; font-weight: 500; line-height: 1.45;
-  color: var(--text-1); margin-bottom: 12px;
+  font-size: 15px; font-weight: 500; line-height: 1.4;
+  color: var(--text-1); margin-bottom: 8px;
 }
 
 /* ── WAGER LINE ── */
@@ -422,14 +422,43 @@ hr { border: none; border-top: 1px solid var(--border-faint); margin: 14px 0; }
 .btn-vote.yes.voted { background: var(--yes-light); }
 .btn-vote.no.voted  { background: var(--no-light); }
 .resolve-row { display: flex; gap: 10px; margin: 10px 0; }
-.participants {
-  display: flex; flex-wrap: wrap; gap: 6px;
+.filter-bar {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.filter-btn {
+  padding: 5px 12px; border-radius: 20px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  font-family: 'Outfit', sans-serif;
+  font-size: 12px; font-weight: 500;
+  color: var(--text-3); cursor: pointer;
+}
+.filter-btn.on {
+  border-color: var(--accent); color: var(--accent);
+  background: var(--bg); font-weight: 600;
+}
+.participants-sides {
   margin-top: 10px; padding-top: 10px;
   border-top: 1px solid var(--border-faint);
+  display: flex; flex-direction: column; gap: 6px;
 }
+.side-group {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+}
+.side-label {
+  font-size: 10px; font-weight: 700; letter-spacing: .5px;
+  padding: 1px 6px; border-radius: 4px;
+  flex-shrink: 0;
+}
+.side-label.yes { background: var(--yes-light); color: var(--yes); }
+.side-label.no  { background: var(--no-light);  color: var(--no); }
 .participant {
   display: inline-flex; align-items: center; gap: 4px;
   font-size: 12px; color: var(--text-2);
+}
+.participant-amt {
+  font-size: 11px; color: var(--text-3); font-weight: 500;
 }
 .avatar-sm {
   width: 18px; height: 18px; border-radius: 50%;
@@ -857,29 +886,79 @@ function emptyState(title, desc) {
   return `<div class="empty"><div class="empty-title">${esc(title)}</div><p class="empty-desc">${esc(desc)}</p></div>`;
 }
 
+let _betFilter = 'all';
+function setBetFilter(f) { _betFilter = f; renderBets(); }
+
 function renderBets() {
   const el = document.getElementById('v-bets');
-  const open = Object.values(S.wagers)
+  const player = me();
+  const all = Object.values(S.wagers)
     .filter(w => w.status !== 'resolved')
     .sort((a, b) => (b.createdAt||0) - (a.createdAt||0));
-  const banner = me() ? '' : joinBanner();
-  if (!open.length) {
-    el.innerHTML = banner + emptyState('No bets yet', 'Tap + to post the first wager');
+
+  let filtered = all;
+  if (_betFilter === 'mine' && player) {
+    filtered = all.filter(w => isParty(w, player.id));
+  } else if (_betFilter === 'open') {
+    filtered = all.filter(w => !overdue(w));
+  } else if (_betFilter === 'closing') {
+    filtered = all.filter(w => overdue(w));
+  }
+
+  const banner = player ? '' : joinBanner();
+  const filterBar = `<div class="filter-bar">
+    <button class="filter-btn ${_betFilter === 'all' ? 'on' : ''}" onclick="setBetFilter('all')">All</button>
+    <button class="filter-btn ${_betFilter === 'mine' ? 'on' : ''}" onclick="setBetFilter('mine')">My Bets</button>
+    <button class="filter-btn ${_betFilter === 'open' ? 'on' : ''}" onclick="setBetFilter('open')">Open</button>
+    <button class="filter-btn ${_betFilter === 'closing' ? 'on' : ''}" onclick="setBetFilter('closing')">Needs Resolution</button>
+  </div>`;
+
+  if (!filtered.length) {
+    el.innerHTML = banner + filterBar + emptyState('No bets match', 'Try a different filter or tap + to post one');
     return;
   }
-  el.innerHTML = banner + open.map(wagerCard).join('');
+  el.innerHTML = banner + filterBar + filtered.map(wagerCard).join('');
 }
 
 function renderParticipants(w) {
-  const ids = parties(w);
-  if (!ids.length) return '';
-  const names = ids.map(id => {
-    const p = S.players[id];
-    if (!p) return null;
-    return `<span class="participant"><span class="avatar-sm" style="background:${avatarColor(id)}">${initials(p.name)}</span>${esc(p.name)}</span>`;
-  }).filter(Boolean);
-  if (!names.length) return '';
-  return `<div class="participants">${names.join('')}</div>`;
+  const wtype = w.type || 'wager';
+  const yesSide = {};
+  const noSide = {};
+
+  if (wtype === 'pool') {
+    for (const b of poolBetList(w)) {
+      const bucket = b.side === 'YES' ? yesSide : noSide;
+      bucket[b.playerId] = (bucket[b.playerId] || 0) + b.amount;
+    }
+  } else {
+    if (w.proposerId) {
+      const bucket = w.proposerSide === 'YES' ? yesSide : noSide;
+      bucket[w.proposerId] = w.proposerStake || 0;
+    }
+    for (const a of acceptanceList(w)) {
+      const otherSide = w.proposerSide === 'YES' ? noSide : yesSide;
+      otherSide[a.takerId] = (otherSide[a.takerId] || 0) + a.takerStake;
+    }
+  }
+
+  const renderSide = (map, side) => {
+    const entries = Object.entries(map);
+    if (!entries.length) return '';
+    return entries.map(([id, amt]) => {
+      const p = S.players[id];
+      if (!p) return '';
+      return `<span class="participant ${side.toLowerCase()}"><span class="avatar-sm" style="background:${avatarColor(id)}">${initials(p.name)}</span>${esc(p.name)} <span class="participant-amt">${fmt(amt)}</span></span>`;
+    }).join('');
+  };
+
+  const yesHTML = renderSide(yesSide, 'YES');
+  const noHTML  = renderSide(noSide, 'NO');
+  if (!yesHTML && !noHTML) return '';
+
+  return `<div class="participants-sides">
+    ${yesHTML ? `<div class="side-group yes"><span class="side-label yes">YES</span>${yesHTML}</div>` : ''}
+    ${noHTML  ? `<div class="side-group no"><span class="side-label no">NO</span>${noHTML}</div>` : ''}
+  </div>`;
 }
 
 function wagerCard(w) {

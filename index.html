@@ -28,6 +28,12 @@
   --no-light: #fdf2ef;
   --no-border: #f0c9be;
   --dough: #5c4a1e;
+  --warn: #854d0e;
+  --warn-bg: #fef9c3;
+  --dispute: #7a1f1f;
+  --dispute-bg: #fde7e7;
+  --pending: #1e4e8c;
+  --pending-bg: #e6effb;
 }
 
 body {
@@ -111,57 +117,68 @@ body {
   margin-bottom: 10px;
   box-shadow: 0 1px 2px rgba(0,0,0,.05);
 }
-.mkt-category {
+.wgr-category {
   font-size: 10px; font-weight: 600; letter-spacing: .9px;
   text-transform: uppercase; color: var(--text-3); margin-bottom: 6px;
 }
-.mkt-question {
+.wgr-question {
   font-family: 'Lora', serif;
   font-size: 16px; font-weight: 500; line-height: 1.45;
-  color: var(--text-1); margin-bottom: 14px;
+  color: var(--text-1); margin-bottom: 12px;
 }
 
-/* Odds */
-.odds-row {
-  display: flex; justify-content: space-between;
-  font-size: 12px; font-weight: 600; margin-bottom: 5px;
+/* ── WAGER LINE ── */
+.wgr-line {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 13px; color: var(--text-2);
+  padding: 6px 0;
 }
-.odds-yes { color: var(--yes); }
-.odds-no  { color: var(--no); }
-.odds-track {
-  height: 5px; border-radius: 3px;
-  background: var(--no-light); overflow: hidden; margin-bottom: 14px;
+.wgr-line strong { color: var(--text-1); font-weight: 600; }
+.wgr-line + .wgr-line { border-top: 1px solid var(--border-faint); }
+.side-chip {
+  display: inline-block;
+  padding: 2px 9px; border-radius: 6px;
+  font-size: 11px; font-weight: 700; letter-spacing: .5px;
 }
-.odds-fill {
-  height: 100%; background: var(--yes);
-  border-radius: 3px; transition: width .4s ease;
-}
+.side-chip.yes { background: var(--yes-light); color: var(--yes); }
+.side-chip.no  { background: var(--no-light);  color: var(--no); }
 
-/* Bet buttons */
-.bet-row { display: flex; gap: 8px; margin-bottom: 10px; }
-.btn-bet {
-  flex: 1; padding: 10px 0;
+/* ── TAKE BUTTON ── */
+.btn-take {
+  width: 100%; margin-top: 12px;
+  padding: 11px 0;
   border-radius: 8px;
   font-family: 'Outfit', sans-serif;
   font-size: 14px; font-weight: 600;
   cursor: pointer; border: 1.5px solid;
   transition: opacity .1s, transform .1s;
 }
-.btn-bet:active { opacity: .8; transform: scale(.98); }
-.btn-yes { background: var(--yes-light); color: var(--yes); border-color: var(--yes-border); }
-.btn-no  { background: var(--no-light);  color: var(--no);  border-color: var(--no-border); }
+.btn-take:active { opacity: .8; transform: scale(.99); }
+.btn-take.yes { background: var(--yes-light); color: var(--yes); border-color: var(--yes-border); }
+.btn-take.no  { background: var(--no-light);  color: var(--no);  border-color: var(--no-border); }
 
-.mkt-meta {
+/* ── META ── */
+.wgr-meta {
   display: flex; flex-wrap: wrap; gap: 8px;
-  font-size: 12px; color: var(--text-3); margin-top: 8px;
+  font-size: 12px; color: var(--text-3); margin-top: 10px;
 }
 .badge-overdue {
   display: inline-block; padding: 1px 7px; border-radius: 10px;
-  background: #fef9c3; color: #854d0e;
+  background: var(--warn-bg); color: var(--warn);
+  font-size: 10px; font-weight: 600; letter-spacing: .3px;
+}
+.badge-pending {
+  display: inline-block; padding: 1px 7px; border-radius: 10px;
+  background: var(--pending-bg); color: var(--pending);
+  font-size: 10px; font-weight: 600; letter-spacing: .3px;
+}
+.badge-disputed {
+  display: inline-block; padding: 1px 7px; border-radius: 10px;
+  background: var(--dispute-bg); color: var(--dispute);
   font-size: 10px; font-weight: 600; letter-spacing: .3px;
 }
 
-/* My bets strip */
+/* ── MY BETS STRIP ── */
 .my-bets {
   margin-top: 10px; padding-top: 10px;
   border-top: 1px solid var(--border-faint);
@@ -171,22 +188,38 @@ body {
   display: flex; justify-content: space-between;
   font-size: 12px; color: var(--text-2);
 }
-.bet-yes-amt { color: var(--yes); font-weight: 600; }
-.bet-no-amt  { color: var(--no);  font-weight: 600; }
+.bet-pos-amt { color: var(--yes); font-weight: 600; }
+.bet-neg-amt { color: var(--no);  font-weight: 600; }
 
-/* Resolve strip */
-.resolve-strip {
+/* ── ACTION STRIP (resolve / cancel / propose / re-propose) ── */
+.action-strip {
   margin-top: 10px; padding-top: 10px;
   border-top: 1px solid var(--border-faint);
   display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; flex-wrap: wrap;
 }
-.resolve-label { font-size: 12px; color: var(--text-3); }
-.btn-resolve {
+.action-label { font-size: 12px; color: var(--text-3); flex: 1; min-width: 120px; }
+.btn-action {
   padding: 6px 14px; border-radius: 20px;
   border: 1px solid var(--border); background: var(--surface);
   font-family: 'Outfit', sans-serif;
   font-size: 13px; font-weight: 500; color: var(--text-2); cursor: pointer;
 }
+.btn-action:active { opacity: .8; }
+.btn-confirm {
+  padding: 6px 14px; border-radius: 20px;
+  border: 1px solid var(--yes-border); background: var(--yes-light);
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px; font-weight: 600; color: var(--yes); cursor: pointer;
+}
+.btn-dispute {
+  padding: 6px 14px; border-radius: 20px;
+  border: 1px solid var(--no-border); background: var(--no-light);
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px; font-weight: 600; color: var(--no); cursor: pointer;
+}
+.btn-confirm:active, .btn-dispute:active { opacity: .8; }
+.action-buttons { display: flex; gap: 6px; flex-wrap: wrap; }
 
 /* ── FAB ── */
 .fab {
@@ -254,17 +287,22 @@ body {
 .field textarea { resize: vertical; min-height: 76px; line-height: 1.5; }
 .helper { font-size: 12px; color: var(--text-3); margin-top: 5px; }
 
-.presets { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
-.preset {
-  padding: 6px 14px;
-  border: 1.5px solid var(--border);
-  border-radius: 20px;
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.two-col .field-label { margin-bottom: 6px; }
+
+.side-toggle { display: flex; gap: 8px; }
+.side-btn {
+  flex: 1; padding: 11px 0;
+  border-radius: 8px;
   font-family: 'Outfit', sans-serif;
-  font-size: 13px; font-weight: 500;
-  color: var(--text-2); background: var(--surface); cursor: pointer;
-  transition: border-color .12s, color .12s;
+  font-size: 14px; font-weight: 600;
+  cursor: pointer;
+  border: 1.5px solid var(--border);
+  background: var(--surface); color: var(--text-3);
+  transition: border-color .12s, color .12s, background .12s;
 }
-.preset.on, .preset:active { border-color: var(--accent); color: var(--accent); }
+.side-btn.on.yes { background: var(--yes-light); color: var(--yes); border-color: var(--yes-border); }
+.side-btn.on.no  { background: var(--no-light);  color: var(--no);  border-color: var(--no-border); }
 
 .btn-primary {
   width: 100%; padding: 14px;
@@ -344,14 +382,6 @@ body {
 .empty-title { font-family: 'Lora', serif; font-size: 17px; color: var(--text-2); margin-bottom: 6px; }
 .empty-desc  { font-size: 14px; }
 
-/* ── WELCOME ── */
-.welcome {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: 20px; padding: 28px 20px; text-align: center; margin-bottom: 16px;
-}
-.welcome-title { font-family: 'Lora', serif; font-size: 26px; font-weight: 600; margin-bottom: 8px; }
-.welcome-lead  { font-size: 15px; color: var(--text-2); margin-bottom: 22px; line-height: 1.6; }
-
 /* ── TOAST ── */
 .toast {
   position: fixed; bottom: 84px; left: 50%;
@@ -366,7 +396,6 @@ body {
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-/* Divider */
 hr { border: none; border-top: 1px solid var(--border-faint); margin: 14px 0; }
 
 /* Join banner */
@@ -399,17 +428,16 @@ hr { border: none; border-top: 1px solid var(--border-faint); margin: 14px 0; }
 </header>
 
 <nav class="tab-bar">
-  <button class="tab active" onclick="switchTab(this,'markets')">Markets</button>
+  <button class="tab active" onclick="switchTab(this,'bets')">Bets</button>
   <button class="tab" onclick="switchTab(this,'standings')">Standings</button>
   <button class="tab" onclick="switchTab(this,'resolved')">Resolved</button>
 </nav>
 
-<div class="view active" id="v-markets"></div>
+<div class="view active" id="v-bets"></div>
 <div class="view" id="v-standings"></div>
 <div class="view" id="v-resolved"></div>
 
-
-<button class="fab" id="fab" onclick="openCreateMarket()">
+<button class="fab" id="fab" onclick="openCreateWager()">
   <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
     <path d="M9 2v14M2 9h14" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
   </svg>
@@ -427,7 +455,7 @@ hr { border: none; border-top: 1px solid var(--border-faint); margin: 14px 0; }
 'use strict';
 
 // ── STATE ─────────────────────────────────────────────────────────────────
-const S = { players: [], markets: [], currentId: null, _uid: 1 };
+const S = { players: [], wagers: [], currentId: null, _uid: 1 };
 const DOUGH_START = 1000;
 const CATS = ['Sports','Entertainment','Pop Culture','Finance','Science','Tech','Other'];
 
@@ -438,23 +466,36 @@ const esc  = s  => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(
 const fmt  = n  => `${Math.round(n).toLocaleString()} dough`;
 const initials = name => name.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0,2);
 const fmtDate  = d => new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-const overdue  = m => m.status === 'open' && new Date(m.closeDate) < new Date();
+const overdue  = w => new Date(w.closeDate) < new Date();
 
-function odds(m) {
-  let yp = 0, np = 0;
-  for (const b of m.bets) b.side === 'YES' ? yp += b.amount : np += b.amount;
-  const tot = yp + np;
-  return {
-    yp, np, tot,
-    yesPct:  tot ? Math.round(yp/tot*100) : 50,
-    noPct:   tot ? Math.round(np/tot*100) : 50,
-    yesMult: yp > 0 ? (tot/yp).toFixed(2) : null,
-    noMult:  np > 0 ? (tot/np).toFixed(2) : null,
-  };
+// ── WAGER HELPERS ─────────────────────────────────────────────────────────
+function gcd(a, b) { return b ? gcd(b, a % b) : Math.abs(a); }
+function impliedOdds(risk, win) {
+  if (!risk || !win) return '—';
+  if (risk === win) return 'Even';
+  const g = gcd(risk, win) || 1;
+  return `${risk/g}:${win/g}`;
+}
+function poolTaken(w)     { return w.acceptances.reduce((s, a) => s + a.takerStake, 0); }
+function poolRemaining(w) { return Math.max(0, w.takerPool - poolTaken(w)); }
+function isFilled(w)      { return poolRemaining(w) === 0; }
+function proposerExposureFor(w, takerStake) {
+  // Proposer's matched escrow for one acceptance, prorated against takerPool.
+  return Math.round(takerStake * w.proposerStake / w.takerPool);
+}
+function parties(w) {
+  const ids = new Set();
+  if (w.proposerId != null) ids.add(w.proposerId);
+  for (const a of w.acceptances) ids.add(a.takerId);
+  return [...ids];
+}
+function isParty(w, playerId) {
+  if (playerId == null) return false;
+  return w.proposerId === playerId || w.acceptances.some(a => a.takerId === playerId);
 }
 
 // ── RENDER ────────────────────────────────────────────────────────────────
-function renderAll() { renderPill(); renderMarkets(); renderStandings(); renderResolved(); }
+function renderAll() { renderPill(); renderBets(); renderStandings(); renderResolved(); }
 function render()    { renderAll(); saveState(); }
 
 function renderPill() {
@@ -466,78 +507,154 @@ function renderPill() {
     : `<span style="padding:0 4px;color:var(--text-2)">+ Join</span>`;
 }
 
-function renderMarkets() {
-  const el = document.getElementById('v-markets');
-  const open = S.markets.filter(m => m.status === 'open');
-  const banner = !me()
-    ? `<div class="join-banner">
-        <span>Add yourself to start betting</span>
-        <button class="btn-join" onclick="openAddPlayer()">Join free</button>
-       </div>`
-    : '';
-  if (!open.length) {
-    el.innerHTML = banner + `<div class="empty"><div class="empty-title">No open markets</div><p class="empty-desc">Tap + to create the first prediction</p></div>`;
-    return;
-  }
-  el.innerHTML = banner + open.map(marketCard).join('');
+function joinBanner() {
+  return `<div class="join-banner">
+    <span>Add yourself to start betting</span>
+    <button class="btn-join" onclick="openAddPlayer()">Join free</button>
+  </div>`;
 }
 
-function marketCard(m) {
-  const o = odds(m);
-  const player = me();
-  const creator = S.players.find(p => p.id === m.creatorId);
-  const myBets = player ? m.bets.filter(b => b.playerId === player.id) : [];
-  const myYes  = myBets.filter(b => b.side === 'YES').reduce((s,b) => s+b.amount, 0);
-  const myNo   = myBets.filter(b => b.side === 'NO').reduce((s,b) => s+b.amount, 0);
-  const canBet = !overdue(m);
-  const isCreator = player && (m.creatorId === player.id || m.creatorId === null);
-  const bettors = new Set(m.bets.map(b => b.playerId)).size;
+function emptyState(title, desc) {
+  return `<div class="empty"><div class="empty-title">${esc(title)}</div><p class="empty-desc">${esc(desc)}</p></div>`;
+}
+
+function renderBets() {
+  const el = document.getElementById('v-bets');
+  const open = S.wagers
+    .filter(w => w.status !== 'resolved')
+    .sort((a, b) => b.createdAt - a.createdAt);
+  const banner = me() ? '' : joinBanner();
+  if (!open.length) {
+    el.innerHTML = banner + emptyState('No bets yet', 'Tap + to post the first wager');
+    return;
+  }
+  el.innerHTML = banner + open.map(wagerCard).join('');
+}
+
+function wagerCard(w) {
+  const player    = me();
+  const proposer  = S.players.find(p => p.id === w.proposerId);
+  const isMine    = player && player.id === w.proposerId;
+  const myParty   = isParty(w, player?.id);
+  const remaining = poolRemaining(w);
+  const filled    = remaining === 0;
+  const past      = overdue(w);
+
+  const otherSide  = w.proposerSide === 'YES' ? 'NO' : 'YES';
+  const proposerCl = w.proposerSide === 'YES' ? 'yes' : 'no';
+  const otherCl    = otherSide === 'YES' ? 'yes' : 'no';
+
+  const myTakes   = player ? w.acceptances.filter(a => a.takerId === player.id) : [];
+  const myStaked  = myTakes.reduce((s, a) => s + a.takerStake, 0);
+
+  const canTake = player && !isMine && remaining > 0 && !past && w.status === 'open';
+
+  // ── meta line
+  const meta = [
+    `${fmt(poolTaken(w))} / ${fmt(w.takerPool)} matched`,
+    `Closes ${fmtDate(w.closeDate)}`,
+    past && w.status === 'open' ? `<span class="badge-overdue">Needs resolution</span>` : '',
+    w.status === 'pending' ? `<span class="badge-pending">Pending confirmation</span>` : '',
+    w.status === 'disputed' ? `<span class="badge-disputed">Disputed</span>` : '',
+  ].filter(Boolean).join(' · ');
+
+  // ── action area
+  let action = '';
+  if (canTake) {
+    action = `<button class="btn-take ${otherCl}" onclick="openAccept(${w.id})">
+      Take ${otherSide} &nbsp;·&nbsp; ${fmt(remaining)} left
+    </button>`;
+  } else if (isMine && !w.acceptances.length && w.status === 'open' && !past) {
+    action = `<div class="action-strip">
+      <span class="action-label">No takers yet — your dough is held</span>
+      <button class="btn-action" onclick="cancelWager(${w.id})">Cancel</button>
+    </div>`;
+  } else if (myParty && past && w.status === 'open') {
+    action = `<div class="action-strip">
+      <span class="action-label">Past close date — call the outcome</span>
+      <button class="btn-action" onclick="openPropose(${w.id})">Propose →</button>
+    </div>`;
+  } else if (w.status === 'pending' && myParty) {
+    action = renderPendingActions(w, player.id);
+  } else if (w.status === 'disputed' && myParty) {
+    action = `<div class="action-strip">
+      <span class="action-label">Disputed — anyone can re-propose</span>
+      <button class="btn-action" onclick="openPropose(${w.id})">Re-propose →</button>
+    </div>`;
+  }
+
+  // ── my position strip
+  let mine = '';
+  if (myStaked) {
+    mine = `<div class="my-bets">
+      <div class="my-bet-line">
+        <span>You took ${otherSide}</span>
+        <span class="bet-${otherCl === 'yes' ? 'pos' : 'neg'}-amt">${fmt(myStaked)}</span>
+      </div>
+    </div>`;
+  } else if (isMine) {
+    mine = `<div class="my-bets">
+      <div class="my-bet-line">
+        <span>Your side</span>
+        <span class="side-chip ${proposerCl}">${w.proposerSide}</span>
+      </div>
+    </div>`;
+  }
 
   return `<div class="card">
-    <div class="mkt-category">${esc(m.category)}</div>
-    <div class="mkt-question">${esc(m.question)}</div>
-    <div class="odds-row">
-      <span class="odds-yes">YES ${o.yesPct}%${o.yesMult ? ` &middot; ${o.yesMult}x` : ''}</span>
-      <span class="odds-no">${o.noPct}%${o.noMult ? ` &middot; ${o.noMult}x` : ''} NO</span>
+    <div class="wgr-category">${esc(w.category)}</div>
+    <div class="wgr-question">${esc(w.question)}</div>
+
+    <div class="wgr-line">
+      <span><strong>${esc(proposer?.name || 'Unknown')}</strong> says <span class="side-chip ${proposerCl}">${w.proposerSide}</span></span>
+      <span>${impliedOdds(w.proposerStake, w.takerPool)} odds</span>
     </div>
-    <div class="odds-track"><div class="odds-fill" style="width:${o.yesPct}%"></div></div>
-    ${canBet ? `<div class="bet-row">
-      <button class="btn-bet btn-yes" onclick="openBet(${m.id},'YES')">Bet YES</button>
-      <button class="btn-bet btn-no"  onclick="openBet(${m.id},'NO')">Bet NO</button>
-    </div>` : ''}
-    ${myYes || myNo ? `<div class="my-bets">
-      ${myYes ? `<div class="my-bet-line"><span>Your YES bet</span><span class="bet-yes-amt">${fmt(myYes)}</span></div>` : ''}
-      ${myNo  ? `<div class="my-bet-line"><span>Your NO bet</span><span class="bet-no-amt">${fmt(myNo)}</span></div>`  : ''}
-    </div>` : ''}
-    <div class="mkt-meta">
-      <span>Pool: ${fmt(o.tot)}</span>
-      <span>${bettors} bettor${bettors !== 1 ? 's' : ''}</span>
-      <span>Closes ${fmtDate(m.closeDate)}</span>
-      ${overdue(m) ? `<span class="badge-overdue">Needs resolution</span>` : ''}
+    <div class="wgr-line">
+      <span>Risks <strong>${fmt(w.proposerStake)}</strong> to win <strong>${fmt(w.takerPool)}</strong></span>
     </div>
-    ${isCreator ? `<div class="resolve-strip">
-      <span class="resolve-label">${m.creatorId === null ? 'Open for resolution' : 'You created this'}</span>
-      <button class="btn-resolve" onclick="openResolve(${m.id})">Resolve &rarr;</button>
-    </div>` : ''}
+
+    ${action}
+    ${mine}
+    <div class="wgr-meta">${meta}</div>
+  </div>`;
+}
+
+function renderPendingActions(w, playerId) {
+  const proposer = S.players.find(p => p.id === w.proposedBy);
+  const confirmed = (w.confirmedBy || []).includes(playerId);
+  const waitingOn = parties(w).filter(id => !(w.confirmedBy || []).includes(id));
+  if (confirmed) {
+    return `<div class="action-strip">
+      <span class="action-label">You confirmed <strong>${w.proposedOutcome}</strong> — waiting on ${waitingOn.length}</span>
+    </div>`;
+  }
+  return `<div class="action-strip">
+    <span class="action-label"><strong>${esc(proposer?.name || '?')}</strong> says <strong>${w.proposedOutcome}</strong></span>
+    <div class="action-buttons">
+      <button class="btn-confirm" onclick="confirmOutcome(${w.id})">Confirm</button>
+      <button class="btn-dispute" onclick="disputeOutcome(${w.id})">Dispute</button>
+    </div>
   </div>`;
 }
 
 function renderStandings() {
   const el = document.getElementById('v-standings');
   if (!S.players.length) {
-    el.innerHTML = `<div class="empty"><div class="empty-title">No players yet</div><p class="empty-desc">Add yourself to start the standings</p></div>`;
+    el.innerHTML = emptyState('No players yet', 'Add yourself to start the standings');
     return;
   }
   const sorted = [...S.players].sort((a,b) => b.balance - a.balance);
   el.innerHTML = sorted.map((p,i) => {
-    const tot = p.wins + p.losses;
+    const tot = (p.wins||0) + (p.losses||0);
     const wr  = tot ? Math.round(p.wins/tot*100) + '%' : '—';
+    const net = p.balance - DOUGH_START;
+    const netStr = (net >= 0 ? '+' : '') + net.toLocaleString();
     const rankCls = ['gold','silver','bronze'][i] ? `rank ${['gold','silver','bronze'][i]}` : 'rank';
     return `<div class="standing ${p.id === S.currentId ? 'me' : ''}">
       <div class="${rankCls}">${i+1}</div>
       <div class="s-info">
         <div class="s-name">${esc(p.name)}${p.id === S.currentId ? ' <span style="font-size:11px;color:var(--text-3)">(you)</span>' : ''}</div>
-        <div class="s-record">${p.wins}W · ${p.losses}L · ${wr} win rate</div>
+        <div class="s-record">${p.wins||0}W · ${p.losses||0}L · ${wr} · ${netStr} net</div>
       </div>
       <div class="s-bal">${fmt(p.balance)}</div>
     </div>`;
@@ -546,35 +663,50 @@ function renderStandings() {
 
 function renderResolved() {
   const el = document.getElementById('v-resolved');
-  const list = S.markets.filter(m => m.status === 'resolved').sort((a,b) => b.resolvedAt - a.resolvedAt);
+  const list = S.wagers.filter(w => w.status === 'resolved').sort((a,b) => b.resolvedAt - a.resolvedAt);
   if (!list.length) {
-    el.innerHTML = `<div class="empty"><div class="empty-title">Nothing resolved yet</div><p class="empty-desc">Settled markets will appear here</p></div>`;
+    el.innerHTML = emptyState('Nothing resolved yet', 'Settled bets will appear here');
     return;
   }
   const player = me();
-  el.innerHTML = list.map(m => {
-    const o = odds(m);
-    const creator = S.players.find(p => p.id === m.creatorId);
-    const myBets  = player ? m.bets.filter(b => b.playerId === player.id) : [];
-    const myWon   = myBets.filter(b => b.side === m.resolution);
-    const myLost  = myBets.filter(b => b.side !== m.resolution);
-    const payout  = player ? (m.payouts[player.id] || 0) : 0;
-    const lostAmt = myLost.reduce((s,b) => s+b.amount, 0);
+  el.innerHTML = list.map(w => {
+    const proposer = S.players.find(p => p.id === w.proposerId);
+    const proposerWon = w.proposerSide === w.resolution;
+    const myParty = player && isParty(w, player.id);
+    let myLine = '';
+    if (myParty) {
+      let net = 0;
+      if (player.id === w.proposerId) {
+        for (const a of w.acceptances) {
+          const exp = proposerExposureFor(w, a.takerStake);
+          net += proposerWon ? a.takerStake : -exp;
+        }
+      } else {
+        const mine = w.acceptances.filter(a => a.takerId === player.id);
+        for (const a of mine) {
+          const exp = proposerExposureFor(w, a.takerStake);
+          net += proposerWon ? -a.takerStake : exp;
+        }
+      }
+      const cls  = net >= 0 ? 'bet-pos-amt' : 'bet-neg-amt';
+      const sign = net >= 0 ? '+' : '−';
+      myLine = `<div class="my-bets"><div class="my-bet-line">
+        <span>Your result</span>
+        <span class="${cls}">${sign}${fmt(Math.abs(net))}</span>
+      </div></div>`;
+    }
     return `<div class="card">
       <div class="res-header">
-        <div class="mkt-category" style="margin:0">${esc(m.category)}</div>
-        <span class="badge badge-${m.resolution.toLowerCase()}">${m.resolution}</span>
+        <div class="wgr-category" style="margin:0">${esc(w.category)}</div>
+        <span class="badge badge-${w.resolution.toLowerCase()}">${w.resolution}</span>
       </div>
-      <div class="mkt-question">${esc(m.question)}</div>
-      <div class="mkt-meta">
-        <span>Pool: ${fmt(o.tot)}</span>
-        <span>Resolved ${fmtDate(m.resolvedAt)}</span>
-        <span>by ${esc(creator ? creator.name : '?')}</span>
+      <div class="wgr-question">${esc(w.question)}</div>
+      <div class="wgr-meta">
+        <span>${esc(proposer?.name || '?')} ${proposerWon ? 'won' : 'lost'} ${w.proposerSide}</span>
+        <span>Resolved ${fmtDate(w.resolvedAt)}</span>
+        <span>${w.acceptances.length} taker${w.acceptances.length !== 1 ? 's' : ''}</span>
       </div>
-      ${myBets.length ? `<div class="my-bets">
-        ${myWon.length && payout ? `<div class="my-bet-line"><span>Your payout</span><span class="bet-yes-amt">+${fmt(payout)}</span></div>` : ''}
-        ${myLost.length && !myWon.length ? `<div class="my-bet-line"><span>Lost</span><span class="bet-no-amt">-${fmt(lostAmt)}</span></div>` : ''}
-      </div>` : ''}
+      ${myLine}
     </div>`;
   }).join('');
 }
@@ -585,7 +717,7 @@ function switchTab(btn, view) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('v-' + view).classList.add('active');
-  document.getElementById('fab').style.display = view === 'markets' ? 'flex' : 'none';
+  document.getElementById('fab').style.display = view === 'bets' ? 'flex' : 'none';
 }
 
 // ── SHEET ─────────────────────────────────────────────────────────────────
@@ -648,156 +780,271 @@ function selectPlayer(id) {
   closeSheet(); render();
 }
 
-// ── CREATE MARKET ─────────────────────────────────────────────────────────
-function openCreateMarket() {
+// ── CREATE WAGER ──────────────────────────────────────────────────────────
+let _pickedSide = 'YES';
+function openCreateWager() {
   if (!me()) { openAddPlayer(); return; }
   const d = new Date(); d.setDate(d.getDate() + 7);
   const defDate = d.toISOString().slice(0,10);
   const today   = new Date().toISOString().slice(0,10);
-  openSheet(`<div class="sheet-title">New Market</div>
+  _pickedSide = 'YES';
+  openSheet(`<div class="sheet-title">New Bet</div>
     <div class="field">
       <label class="field-label">Question</label>
-      <textarea id="mQ" placeholder="Will the Lakers make the playoffs this season?" maxlength="200"></textarea>
+      <textarea id="wQ" placeholder="Will the Lakers make the playoffs?" maxlength="200"></textarea>
     </div>
     <div class="field">
       <label class="field-label">Category</label>
-      <select id="mC">${CATS.map(c => `<option>${c}</option>`).join('')}</select>
+      <select id="wC">${CATS.map(c => `<option>${c}</option>`).join('')}</select>
     </div>
+    <div class="field">
+      <label class="field-label">My side</label>
+      <div class="side-toggle">
+        <button type="button" class="side-btn yes on" id="sideYes" onclick="pickSide('YES')">YES</button>
+        <button type="button" class="side-btn no"     id="sideNo"  onclick="pickSide('NO')">NO</button>
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="field">
+        <label class="field-label">I risk</label>
+        <input type="number" id="wRisk" placeholder="20" min="1" max="${me().balance}" inputmode="numeric" oninput="updateOddsHint()">
+      </div>
+      <div class="field">
+        <label class="field-label">To win</label>
+        <input type="number" id="wWin" placeholder="20" min="1" inputmode="numeric" oninput="updateOddsHint()">
+      </div>
+    </div>
+    <p class="helper" id="oddsHint" style="margin-top:-6px;margin-bottom:14px">Even money — anyone can take up to ${fmt(me().balance)}.</p>
     <div class="field">
       <label class="field-label">Close date</label>
-      <input type="date" id="mD" value="${defDate}" min="${today}">
+      <input type="date" id="wD" value="${defDate}" min="${today}">
     </div>
-    <button class="btn-primary" onclick="createMarket()">Create Market</button>`);
-  setTimeout(() => document.getElementById('mQ')?.focus(), 300);
+    <button class="btn-primary" onclick="createWager()">Post Bet</button>`);
+  setTimeout(() => document.getElementById('wQ')?.focus(), 300);
 }
 
-function createMarket() {
-  const q    = (document.getElementById('mQ').value || '').trim();
-  const cat  = document.getElementById('mC').value;
-  const date = document.getElementById('mD').value;
-  if (!q)    { toast('Please write a question'); return; }
-  if (!date) { toast('Please pick a close date'); return; }
-  S.markets.push({
-    id: uid(), question: q, category: cat,
-    closeDate: date, creatorId: S.currentId,
-    status: 'open', resolution: null, resolvedAt: null,
-    payouts: {}, bets: [], createdAt: Date.now()
+function pickSide(s) {
+  _pickedSide = s;
+  document.getElementById('sideYes').classList.toggle('on', s === 'YES');
+  document.getElementById('sideNo').classList.toggle('on', s === 'NO');
+}
+
+function updateOddsHint() {
+  const risk = Math.floor(+document.getElementById('wRisk').value);
+  const win  = Math.floor(+document.getElementById('wWin').value);
+  const el = document.getElementById('oddsHint');
+  if (!risk || !win) { el.textContent = 'Set both amounts.'; return; }
+  let label = '';
+  if (risk === win)       label = 'Even money';
+  else if (risk > win)    label = `${impliedOdds(risk, win)} — you're laying the favorite`;
+  else                    label = `${impliedOdds(risk, win)} — you're taking the underdog`;
+  el.innerHTML = `${label} · anyone can take up to <strong>${fmt(win)}</strong>.`;
+}
+
+function createWager() {
+  const q    = (document.getElementById('wQ').value || '').trim();
+  const cat  = document.getElementById('wC').value;
+  const date = document.getElementById('wD').value;
+  const risk = Math.floor(+document.getElementById('wRisk').value);
+  const win  = Math.floor(+document.getElementById('wWin').value);
+  const player = me(); if (!player) return;
+
+  if (!q)               return toast('Write a question');
+  if (!date)            return toast('Pick a close date');
+  if (!risk || risk<1)  return toast('Enter what you risk');
+  if (!win  || win<1)   return toast('Enter what you can win');
+  if (risk > player.balance) return toast(`Not enough dough — you have ${fmt(player.balance)}`);
+
+  player.balance -= risk;
+  S.wagers.push({
+    id: uid(),
+    question: q, category: cat, closeDate: date,
+    proposerId: player.id,
+    proposerSide: _pickedSide,
+    proposerStake: risk,
+    takerPool: win,
+    acceptances: [],
+    status: 'open',
+    proposedOutcome: null, proposedBy: null,
+    confirmedBy: [], disputedBy: [],
+    resolution: null, resolvedAt: null,
+    createdAt: Date.now(),
   });
   closeSheet(); render();
-  toast('Market created!');
+  toast('Bet posted!');
 }
 
-// ── BET ───────────────────────────────────────────────────────────────────
-function openBet(marketId, side) {
+// ── ACCEPT WAGER ──────────────────────────────────────────────────────────
+function openAccept(wagerId) {
   if (!me()) { openAddPlayer(); return; }
-  const m = S.markets.find(x => x.id === marketId); if (!m) return;
+  const w = S.wagers.find(x => x.id === wagerId); if (!w) return;
   const player = me();
-  const o = odds(m);
-  const presets = [25, 50, 100, 250, 500].filter(p => p <= player.balance);
-  const col = side === 'YES' ? 'var(--yes)' : 'var(--no)';
-  openSheet(`<div class="sheet-title">Bet <span style="color:${col}">${side}</span></div>
-    <div class="sheet-sub">${esc(m.question)}</div>
+  if (w.proposerId === player.id) return toast("Can't take your own bet");
+  const remaining = poolRemaining(w);
+  if (remaining <= 0) return toast('Fully matched');
+  const proposer  = S.players.find(p => p.id === w.proposerId);
+  const otherSide = w.proposerSide === 'YES' ? 'NO' : 'YES';
+  const otherCl   = otherSide === 'YES' ? 'yes' : 'no';
+  const cap = Math.min(remaining, player.balance);
+  const presets = [25, 50, 100, 250].filter(v => v <= cap);
+
+  openSheet(`<div class="sheet-title">Take this bet</div>
+    <div class="sheet-sub">${esc(w.question)}</div>
     <div class="info-box">
-      <div class="info-row"><span>YES</span><strong>${o.yesPct}%</strong></div>
-      <div class="info-row"><span>NO</span><strong>${o.noPct}%</strong></div>
-      <div class="info-row"><span>Total pool</span><strong>${fmt(o.tot)}</strong></div>
+      <div class="info-row"><span>${esc(proposer?.name || '?')}'s side</span><strong>${w.proposerSide}</strong></div>
+      <div class="info-row"><span>Your side</span><strong style="color:var(--${otherCl})">${otherSide}</strong></div>
+      <div class="info-row"><span>Odds</span><strong>${impliedOdds(w.proposerStake, w.takerPool)}</strong></div>
+      <div class="info-row"><span>Available to take</span><strong>${fmt(remaining)}</strong></div>
     </div>
     <div class="field">
-      <label class="field-label">Amount &nbsp;<span style="font-weight:400;color:var(--text-3)">Balance: ${fmt(player.balance)}</span></label>
-      <div class="presets">${presets.map(p => `<button class="preset" onclick="setPreset(this,${p},${marketId},'${side}')">${p.toLocaleString()}</button>`).join('')}</div>
-      <input type="number" id="betAmt" placeholder="Enter amount" min="1" max="${player.balance}" step="1" oninput="calcPayout(${marketId},'${side}')">
-      <p class="helper" id="payoutPreview">Enter an amount to see your estimated return.</p>
+      <label class="field-label">Your stake &nbsp;<span style="font-weight:400;color:var(--text-3)">Balance: ${fmt(player.balance)}</span></label>
+      ${presets.length ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">${
+        presets.map(v => `<button type="button" class="btn-action" onclick="setAcceptAmt(${v},${wagerId})">${v}</button>`).join('')
+      }${cap > 0 ? `<button type="button" class="btn-action" onclick="setAcceptAmt(${cap},${wagerId})">Max ${cap}</button>` : ''}</div>` : ''}
+      <input type="number" id="acceptAmt" min="1" max="${cap}" step="1" placeholder="Up to ${cap}" inputmode="numeric" oninput="calcAcceptPayout(${wagerId})">
+      <p class="helper" id="acceptPayout">Enter an amount to see your payout.</p>
     </div>
-    <button class="btn-primary" style="background:${col}" onclick="placeBet(${marketId},'${side}')">Place Bet</button>`);
-  setTimeout(() => document.getElementById('betAmt')?.focus(), 300);
+    <button class="btn-primary" style="background:var(--${otherCl})" onclick="acceptWager(${wagerId})">Take ${otherSide}</button>`);
+  setTimeout(() => document.getElementById('acceptAmt')?.focus(), 300);
 }
 
-function setPreset(btn, val, marketId, side) {
-  document.getElementById('betAmt').value = val;
-  document.querySelectorAll('.preset').forEach(b => b.classList.remove('on'));
-  btn.classList.add('on');
-  calcPayout(marketId, side);
+function setAcceptAmt(v, wagerId) {
+  const el = document.getElementById('acceptAmt');
+  if (!el) return;
+  el.value = v;
+  calcAcceptPayout(wagerId);
 }
 
-function calcPayout(marketId, side) {
-  const m = S.markets.find(x => x.id === marketId); if (!m) return;
-  const el = document.getElementById('payoutPreview'); if (!el) return;
-  const amt = Math.floor(+document.getElementById('betAmt').value);
-  if (!amt || amt < 1) { el.textContent = 'Enter an amount to see your estimated return.'; return; }
-  const o = odds(m);
-  const winPool = (side === 'YES' ? o.yp : o.np) + amt;
-  const newTot  = o.tot + amt;
-  const payout  = Math.floor(amt / winPool * newTot);
-  const profit  = payout - amt;
-  el.innerHTML  = `If ${side} wins: <strong style="color:var(--yes)">return ${fmt(payout)}</strong> <span style="color:var(--text-3)">(${profit >= 0 ? '+' : ''}${fmt(profit)} profit)</span>`;
+function calcAcceptPayout(wagerId) {
+  const w  = S.wagers.find(x => x.id === wagerId); if (!w) return;
+  const el = document.getElementById('acceptPayout'); if (!el) return;
+  const amt = Math.floor(+document.getElementById('acceptAmt').value);
+  if (!amt || amt < 1) { el.textContent = 'Enter an amount to see your payout.'; return; }
+  const propExposure = proposerExposureFor(w, amt);
+  el.innerHTML = `If you win: <strong style="color:var(--yes)">+${fmt(propExposure)}</strong> profit (return ${fmt(amt + propExposure)}).`;
 }
 
-function placeBet(marketId, side) {
+function acceptWager(wagerId) {
+  const w = S.wagers.find(x => x.id === wagerId); if (!w) return;
   const player = me(); if (!player) return;
-  const amt = Math.floor(+document.getElementById('betAmt').value);
-  if (!amt || amt < 1)       { toast('Enter a valid amount'); return; }
-  if (amt > player.balance)  { toast("Not enough dough"); return; }
-  const m = S.markets.find(x => x.id === marketId);
-  if (!m || m.status !== 'open') return;
+  const amt = Math.floor(+document.getElementById('acceptAmt').value);
+  const remaining = poolRemaining(w);
+  if (!amt || amt < 1)       return toast('Enter a valid amount');
+  if (amt > remaining)       return toast(`Only ${fmt(remaining)} left`);
+  if (amt > player.balance)  return toast('Not enough dough');
+  if (w.proposerId === player.id) return toast("Can't take your own bet");
+  if (w.status !== 'open')   return toast('Bet is no longer open');
+
   player.balance -= amt;
-  m.bets.push({ id: uid(), playerId: player.id, side, amount: amt, at: Date.now() });
+  w.acceptances.push({
+    id: uid(), takerId: player.id, takerStake: amt, acceptedAt: Date.now(),
+  });
   closeSheet(); render();
-  toast(`Bet ${fmt(amt)} on ${side}`);
+  const otherSide = w.proposerSide === 'YES' ? 'NO' : 'YES';
+  toast(`Took ${fmt(amt)} on ${otherSide}`);
 }
 
-// ── RESOLVE ───────────────────────────────────────────────────────────────
-function openResolve(marketId) {
-  const m = S.markets.find(x => x.id === marketId); if (!m) return;
-  const o = odds(m);
-  openSheet(`<div class="sheet-title">Resolve Market</div>
-    <div class="sheet-sub">${esc(m.question)}</div>
-    <div class="info-box">
-      <div class="info-row"><span>YES pool</span><strong style="color:var(--yes)">${fmt(o.yp)}</strong></div>
-      <div class="info-row"><span>NO pool</span><strong style="color:var(--no)">${fmt(o.np)}</strong></div>
-      <div class="info-row"><span>Total pool</span><strong>${fmt(o.tot)}</strong></div>
-    </div>
-    <p style="font-size:14px;font-weight:500;color:var(--text-2);margin-bottom:10px">What was the outcome?</p>
+// ── CANCEL (proposer only, no acceptances) ────────────────────────────────
+function cancelWager(wagerId) {
+  const w = S.wagers.find(x => x.id === wagerId); if (!w) return;
+  const player = me(); if (!player || player.id !== w.proposerId) return;
+  if (w.acceptances.length) return toast('Already has takers — can\'t cancel');
+  player.balance += w.proposerStake;
+  S.wagers = S.wagers.filter(x => x.id !== wagerId);
+  render();
+  toast('Bet cancelled — dough refunded');
+}
+
+// ── PROPOSE / CONFIRM / DISPUTE / SETTLE ──────────────────────────────────
+function openPropose(wagerId) {
+  const w = S.wagers.find(x => x.id === wagerId); if (!w) return;
+  const player = me(); if (!player) return toast('Sign in first');
+  if (!isParty(w, player.id)) return toast('Only parties to the bet can propose');
+  openSheet(`<div class="sheet-title">What was the outcome?</div>
+    <div class="sheet-sub">${esc(w.question)}</div>
+    <p style="font-size:13px;color:var(--text-2);margin-bottom:12px">All other parties will need to confirm before payouts go out.</p>
     <div class="resolve-btns">
-      <button class="btn-ryes" onclick="resolveMarket(${marketId},'YES')">YES</button>
-      <button class="btn-rno"  onclick="resolveMarket(${marketId},'NO')">NO</button>
+      <button class="btn-ryes" onclick="proposeOutcome(${wagerId},'YES')">YES</button>
+      <button class="btn-rno"  onclick="proposeOutcome(${wagerId},'NO')">NO</button>
     </div>`);
 }
 
-function resolveMarket(marketId, resolution) {
-  const m = S.markets.find(x => x.id === marketId); if (!m) return;
-  const o = odds(m);
-  m.status = 'resolved'; m.resolution = resolution; m.resolvedAt = Date.now(); m.payouts = {};
+function proposeOutcome(wagerId, outcome) {
+  const w = S.wagers.find(x => x.id === wagerId); if (!w) return;
+  const player = me(); if (!player) return;
+  if (!isParty(w, player.id)) return;
+  w.proposedOutcome = outcome;
+  w.proposedBy = player.id;
+  w.confirmedBy = [player.id];
+  w.disputedBy = [];
+  w.status = 'pending';
+  maybeSettle(w);
+  closeSheet(); render();
+  toast(`Proposed ${outcome}`);
+}
 
-  const winBets  = m.bets.filter(b => b.side === resolution);
-  const loseBets = m.bets.filter(b => b.side !== resolution);
-  const winPool  = resolution === 'YES' ? o.yp : o.np;
+function confirmOutcome(wagerId) {
+  const w = S.wagers.find(x => x.id === wagerId); if (!w) return;
+  const player = me(); if (!player) return;
+  if (!isParty(w, player.id)) return;
+  if (!w.confirmedBy.includes(player.id)) w.confirmedBy.push(player.id);
+  w.disputedBy = w.disputedBy.filter(id => id !== player.id);
+  // If someone had disputed but everyone else now confirms and nobody is still disputing, lift dispute
+  if (w.disputedBy.length === 0 && w.status === 'disputed') w.status = 'pending';
+  maybeSettle(w);
+  render();
+  toast(`Confirmed ${w.proposedOutcome}`);
+}
 
-  if (!winPool || !o.tot) {
-    // No winning bets — refund everyone
-    m.bets.forEach(b => {
-      const p = S.players.find(x => x.id === b.playerId);
-      if (p) { p.balance += b.amount; m.payouts[b.playerId] = (m.payouts[b.playerId] || 0) + b.amount; }
-    });
-    closeSheet(); render(); toast('No bets on winning side — all refunded'); return;
+function disputeOutcome(wagerId) {
+  const w = S.wagers.find(x => x.id === wagerId); if (!w) return;
+  const player = me(); if (!player) return;
+  if (!isParty(w, player.id)) return;
+  if (!w.disputedBy.includes(player.id)) w.disputedBy.push(player.id);
+  w.confirmedBy = w.confirmedBy.filter(id => id !== player.id);
+  w.status = 'disputed';
+  render();
+  toast('Disputed — needs re-proposal');
+}
+
+function maybeSettle(w) {
+  if (!w.proposedOutcome) return;
+  if (w.disputedBy.length) { w.status = 'disputed'; return; }
+  const everyone = parties(w).every(id => w.confirmedBy.includes(id));
+  if (everyone) settle(w);
+}
+
+function settle(w) {
+  const outcome = w.proposedOutcome;
+  w.resolution = outcome;
+  w.resolvedAt = Date.now();
+  w.status = 'resolved';
+
+  const proposer = S.players.find(p => p.id === w.proposerId);
+  const proposerWon = w.proposerSide === outcome;
+
+  // Refund proposer for any unmatched portion of their stake
+  const taken = poolTaken(w);
+  if (proposer && taken < w.takerPool) {
+    const matchedExposure = Math.round(taken * w.proposerStake / w.takerPool);
+    const unmatched = w.proposerStake - matchedExposure;
+    if (unmatched > 0) proposer.balance += unmatched;
   }
 
-  // Pay winners proportionally from total pool
-  winBets.forEach(b => {
-    const p = S.players.find(x => x.id === b.playerId); if (!p) return;
-    const payout = Math.floor(b.amount / winPool * o.tot);
-    p.balance += payout;
-    m.payouts[b.playerId] = (m.payouts[b.playerId] || 0) + payout;
-  });
-
-  // W/L tracking
-  const winIds  = new Set(winBets.map(b => b.playerId));
-  const loseIds = new Set(loseBets.map(b => b.playerId));
-  winIds.forEach(id => { const p = S.players.find(x => x.id === id); if (p) p.wins++; });
-  loseIds.forEach(id => {
-    if (!winIds.has(id)) { const p = S.players.find(x => x.id === id); if (p) p.losses++; }
-  });
-
-  closeSheet(); render(); toast(`Resolved ${resolution}! Winners paid out.`);
+  // Settle each acceptance independently
+  for (const a of w.acceptances) {
+    const taker = S.players.find(p => p.id === a.takerId);
+    const propExp = proposerExposureFor(w, a.takerStake);
+    if (proposerWon) {
+      if (proposer) proposer.balance += propExp + a.takerStake; // gets escrow + taker's stake
+      if (proposer) proposer.wins   = (proposer.wins||0) + 1;
+      if (taker)    taker.losses    = (taker.losses||0) + 1;
+    } else {
+      if (taker)    taker.balance   += a.takerStake + propExp; // gets escrow + proposer's matched piece
+      if (taker)    taker.wins      = (taker.wins||0) + 1;
+      if (proposer) proposer.losses = (proposer.losses||0) + 1;
+    }
+  }
 }
 
 // ── SYNC ──────────────────────────────────────────────────────────────────
@@ -811,54 +1058,43 @@ const FIREBASE_CONFIG = {
   appId: "1:96097618636:web:968b2566f0e15845955069"
 };
 
+// Data lives under /kolache_v2 — schema differs from the old /kolache (markets → wagers).
+const DB_PATH = 'kolache_v2';
 let _db = null;
 const SESSION_ID = Math.random().toString(36).slice(2, 10);
 
-// Write shared state to Firebase, tagged with our session so the listener can ignore our own echoes.
 function saveState() {
   try { localStorage.setItem('kolache_cid', JSON.stringify(S.currentId)); } catch(e) {}
   if (_db) {
-    _db.ref('kolache')
-      .set({ players: S.players, markets: S.markets, _uid: S._uid, _by: SESSION_ID })
+    _db.ref(DB_PATH)
+      .set({ players: S.players, wagers: S.wagers, _uid: S._uid, _by: SESSION_ID })
       .catch(e => console.error('Firebase write error:', e));
-  }
-}
-
-function ensureSeed() {
-  if (!S.markets.find(m => m.seed)) {
-    const d = new Date(); d.setDate(d.getDate() + 1);
-    S.markets.unshift({
-      id: uid(), seed: true,
-      question: 'Cole drinks 8 or more beers today',
-      category: 'Sports', closeDate: d.toISOString().slice(0,10),
-      creatorId: null, status: 'open', resolution: null,
-      resolvedAt: null, payouts: {}, bets: [], createdAt: Date.now()
-    });
   }
 }
 
 function initSync() {
   try { S.currentId = JSON.parse(localStorage.getItem('kolache_cid')) ?? null; } catch(e) {}
 
-  // Render immediately with empty state so there's never a blank screen
-  ensureSeed();
   renderAll();
 
-  const app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
-  _db = firebase.database(app);
+  try {
+    const app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
+    _db = firebase.database(app);
+  } catch (e) {
+    console.error('Firebase init failed:', e);
+    return;
+  }
 
-  _db.ref('kolache').on('value', snap => {
+  _db.ref(DB_PATH).on('value', snap => {
     const d = snap.val();
-    if (!d) { render(); return; }       // empty DB — write seed to Firebase
-    if (d._by === SESSION_ID) return;   // our own echo — state already correct, skip
-    S.players = d.players || [];        // remote update — apply and re-render
-    S.markets = d.markets || [];
+    if (!d) { render(); return; }       // empty node — push our (empty) state
+    if (d._by === SESSION_ID) return;   // our own echo
+    S.players = d.players || [];
+    S.wagers  = d.wagers  || [];
     S._uid    = Math.max(S._uid, d._uid || 1);
-    ensureSeed();
     renderAll();
   }, e => console.error('Firebase:', e));
 }
-
 
 // ── TOAST ─────────────────────────────────────────────────────────────────
 let _tt;

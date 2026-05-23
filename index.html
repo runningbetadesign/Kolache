@@ -6,7 +6,7 @@
 <title>Kolache</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Barlow:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=Barlow:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -63,7 +63,7 @@ body {
   background: linear-gradient(90deg, #1a6b3c 25%, #d4a017 25%, #d4a017 50%, #c23028 50%, #c23028 75%, #1a1a1a 75%);
 }
 .logo {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Lora', serif;
   font-size: 22px; font-weight: 700; letter-spacing: 1px;
   color: #fffdf7;
 }
@@ -77,15 +77,14 @@ body {
 }
 .player-pill:active { opacity: .8; }
 .avatar {
-  width: 30px; height: 30px; border-radius: 50%;
-  background: var(--dough); color: #1a1a1a;
-  font-size: 11px; font-weight: 700;
+  width: 28px; height: 28px; border-radius: 50%;
+  background: #3a3530; color: #fff;
+  font-size: 10px; font-weight: 700;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0; letter-spacing: .3px;
-  box-shadow: 0 0 0 2px rgba(212,160,23,.3);
 }
+.pill-dough { color: var(--dough); font-size: 14px; font-weight: 700; white-space: nowrap; }
 .pill-name { display: none; }
-.pill-dough { color: var(--dough); font-size: 13px; font-weight: 700; white-space: nowrap; }
 .pill-caret { display: none; }
 
 /* ── TAB BAR ── */
@@ -111,7 +110,7 @@ body {
   text-transform: uppercase;
   letter-spacing: 1.5px;
 }
-.tab.active { color: #fff; border-bottom-color: var(--dough); }
+.tab.active { color: #fff; border-bottom-color: #fff; }
 .tab-badge {
   display: inline-flex; align-items: center; justify-content: center;
   min-width: 18px; height: 18px; padding: 0 5px;
@@ -140,8 +139,8 @@ body {
   text-transform: uppercase; color: var(--text-3); margin-bottom: 4px;
 }
 .wgr-question {
-  font-family: 'Playfair Display', serif;
-  font-style: italic;
+  font-family: 'Lora', serif;
+  font-style: normal;
   font-size: 17px; font-weight: 400; line-height: 1.4;
   color: var(--text-1); margin-bottom: 6px;
 }
@@ -181,7 +180,7 @@ body {
   display: inline-block;
   padding: 2px 9px; border-radius: 3px;
   font-size: 11px; font-weight: 700; letter-spacing: .8px;
-  font-family: 'Playfair Display', serif;
+  font-family: 'Lora', serif;
 }
 .side-chip.yes { background: var(--yes-light); color: var(--yes); }
 .side-chip.no  { background: var(--no-light);  color: var(--no); }
@@ -191,7 +190,7 @@ body {
   width: 100%; margin-top: 12px;
   padding: 12px 0;
   border-radius: 4px;
-  font-family: 'Playfair Display', serif;
+  font-family: 'Lora', serif;
   font-size: 14px; font-weight: 600;
   cursor: pointer; border: 1.5px solid;
   transition: opacity .1s, transform .1s;
@@ -211,19 +210,19 @@ body {
   display: inline-block; padding: 1px 7px; border-radius: 3px;
   background: var(--warn-bg); color: var(--warn);
   font-size: 10px; font-weight: 600; letter-spacing: .5px;
-  font-family: 'Playfair Display', serif; text-transform: uppercase;
+  font-family: 'Lora', serif; text-transform: uppercase;
 }
 .badge-pending {
   display: inline-block; padding: 1px 7px; border-radius: 3px;
   background: var(--pending-bg); color: var(--pending);
   font-size: 10px; font-weight: 600; letter-spacing: .5px;
-  font-family: 'Playfair Display', serif; text-transform: uppercase;
+  font-family: 'Lora', serif; text-transform: uppercase;
 }
 .badge-disputed {
   display: inline-block; padding: 1px 7px; border-radius: 3px;
   background: var(--dispute-bg); color: var(--dispute);
   font-size: 10px; font-weight: 600; letter-spacing: .5px;
-  font-family: 'Playfair Display', serif; text-transform: uppercase;
+  font-family: 'Lora', serif; text-transform: uppercase;
 }
 
 /* ── MY BETS STRIP ── */
@@ -273,7 +272,7 @@ body {
 .fab {
   position: fixed; bottom: 24px; right: 16px;
   width: 52px; height: 52px; border-radius: 50%;
-  background: var(--dough); color: #1a1a1a;
+  background: #2a2520; color: #fffdf7;
   border: none; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   box-shadow: 0 4px 16px rgba(0,0,0,.25);
@@ -301,11 +300,11 @@ body {
 .sheet.open { transform: translateY(0); }
 .sheet-handle {
   width: 36px; height: 4px; border-radius: 2px;
-  background: var(--dough); margin: 12px auto;
+  background: var(--border); margin: 12px auto;
 }
 .sheet-body { padding: 4px 20px 44px; }
 .sheet-title {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Lora', serif;
   font-size: 22px; font-weight: 600;
   color: var(--text-1); margin-bottom: 18px;
   text-transform: uppercase;
@@ -321,7 +320,7 @@ body {
 .field { margin-bottom: 14px; }
 .field-label {
   display: block;
-  font-family: 'Playfair Display', serif;
+  font-family: 'Lora', serif;
   font-size: 12px; font-weight: 600; letter-spacing: .8px;
   color: var(--text-2); margin-bottom: 6px;
   text-transform: uppercase;
@@ -347,7 +346,7 @@ body {
 .side-btn {
   flex: 1; padding: 11px 0;
   border-radius: 4px;
-  font-family: 'Playfair Display', serif;
+  font-family: 'Lora', serif;
   font-size: 14px; font-weight: 600;
   cursor: pointer;
   border: 1.5px solid var(--border);
@@ -362,7 +361,7 @@ body {
 .btn-primary {
   width: 100%; padding: 14px;
   border-radius: 4px; border: none;
-  font-family: 'Playfair Display', serif;
+  font-family: 'Lora', serif;
   font-size: 16px; font-weight: 600;
   cursor: pointer; color: #fff; background: var(--accent);
   transition: opacity .15s;
@@ -400,7 +399,7 @@ body {
 .resolve-btns { display: flex; gap: 10px; margin-top: 4px; }
 .btn-ryes, .btn-rno {
   flex: 1; padding: 14px; border-radius: 4px;
-  font-family: 'Playfair Display', serif;
+  font-family: 'Lora', serif;
   font-size: 16px; font-weight: 700; cursor: pointer;
   text-transform: uppercase;
   letter-spacing: .5px;
@@ -419,15 +418,15 @@ body {
   box-shadow: 0 2px 6px rgba(0,0,0,.07);
 }
 .standing.me { border-left-color: var(--accent); background: #faf5f0; }
-.standing:first-child { border-left: 3px solid var(--dough); }
-.rank { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: var(--text-3); width: 28px; flex-shrink: 0; }
+.standing:first-child { border-left: 3px solid var(--border); }
+.rank { font-family: 'Lora', serif; font-size: 20px; font-weight: 700; color: var(--text-3); width: 28px; flex-shrink: 0; }
 .rank.gold   { color: var(--dough); }
 .rank.silver { color: #8a8a8a; }
 .rank.bronze { color: #a0622e; }
 .s-info { flex: 1; min-width: 0; }
-.s-name   { font-size: 15px; font-weight: 600; font-family: 'Playfair Display', serif; }
+.s-name   { font-size: 15px; font-weight: 600; font-family: 'Lora', serif; }
 .s-record { font-size: 12px; color: var(--text-3); margin-top: 2px; }
-.s-bal    { font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 700; color: var(--dough); white-space: nowrap; }
+.s-bal    { font-family: 'Lora', serif; font-size: 17px; font-weight: 700; color: var(--dough); white-space: nowrap; }
 
 /* ── RESOLVED ── */
 .res-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
@@ -435,7 +434,7 @@ body {
   display: inline-flex; align-items: center;
   padding: 2px 8px; border-radius: 3px;
   font-size: 11px; font-weight: 700; letter-spacing: .8px;
-  font-family: 'Playfair Display', serif;
+  font-family: 'Lora', serif;
 }
 .badge-yes { background: var(--yes-light); color: var(--yes); }
 .badge-no  { background: var(--no-light);  color: var(--no); }
@@ -445,6 +444,7 @@ body {
   overflow: hidden;
 }
 .card-resolved::before {
+  display: none;
   content: '';
   position: absolute;
   top: 0; right: 0;
@@ -464,7 +464,7 @@ body {
 /* ── EMPTY ── */
 .empty { text-align: center; padding: 48px 20px; color: var(--text-3); }
 .empty-icon { font-size: 36px; margin-bottom: 8px; }
-.empty-title { font-family: 'Playfair Display', serif; font-size: 17px; color: var(--text-2); margin-bottom: 6px; }
+.empty-title { font-family: 'Lora', serif; font-size: 17px; color: var(--text-2); margin-bottom: 6px; }
 .empty-desc  { font-size: 14px; }
 
 /* ── TOAST ── */
@@ -486,14 +486,14 @@ hr { border: none; border-top: 1px solid var(--border-faint); margin: 14px 0; }
 
 /* ── POOL / VOTE / RESOLVE ── */
 .pool-summary { display: flex; gap: 10px; margin: 10px 0; }
-.pool-side { flex: 1; padding: 10px; border-radius: 4px; text-align: center; font-size: 13px; font-family: 'Playfair Display', serif; }
+.pool-side { flex: 1; padding: 10px; border-radius: 4px; text-align: center; font-size: 13px; font-family: 'Lora', serif; }
 .pool-side.yes { background: var(--yes-light); color: var(--yes); border: 1px solid var(--yes-border); }
 .pool-side.no  { background: var(--no-light);  color: var(--no);  border: 1px solid var(--no-border); }
 .type-chip { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 9px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; margin-left: 6px; font-family: 'Barlow', sans-serif; border: 1.5px solid; }
 .type-chip.pool { background: #fef6e0; color: #8a6d1b; border-color: #d4a017; }
 .type-chip.wager { background: #e8eef4; color: #3a5068; border-color: #8aa8c4; }
 .vote-row { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
-.btn-vote { padding: 6px 14px; border-radius: 4px; border: 1.5px solid var(--border); background: var(--surface); font-family: 'Playfair Display', serif; font-size: 12px; font-weight: 600; cursor: pointer; text-transform: uppercase; letter-spacing: .5px; }
+.btn-vote { padding: 6px 14px; border-radius: 4px; border: 1.5px solid var(--border); background: var(--surface); font-family: 'Lora', serif; font-size: 12px; font-weight: 600; cursor: pointer; text-transform: uppercase; letter-spacing: .5px; }
 .btn-vote.yes { border-color: var(--yes-border); color: var(--yes); }
 .btn-vote.no  { border-color: var(--no-border);  color: var(--no); }
 .btn-vote.voted { font-weight: 700; }
@@ -508,7 +508,7 @@ hr { border: none; border-top: 1px solid var(--border-faint); margin: 14px 0; }
   padding: 5px 12px; border-radius: 4px;
   border: 1.5px solid var(--border);
   background: var(--surface);
-  font-family: 'Playfair Display', serif;
+  font-family: 'Lora', serif;
   font-size: 12px; font-weight: 500;
   color: var(--text-3); cursor: pointer;
   text-transform: uppercase;
@@ -527,7 +527,7 @@ hr { border: none; border-top: 1px solid var(--border-faint); margin: 14px 0; }
   display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
 }
 .side-label {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Lora', serif;
   font-size: 10px; font-weight: 700; letter-spacing: .8px;
   padding: 1px 6px; border-radius: 3px;
   flex-shrink: 0;
@@ -560,7 +560,7 @@ hr { border: none; border-top: 1px solid var(--border-faint); margin: 14px 0; }
   padding: 5px 13px; border-radius: 4px;
   border: 1px solid var(--accent);
   background: var(--accent); color: #fff;
-  font-family: 'Playfair Display', serif;
+  font-family: 'Lora', serif;
   font-size: 12px; font-weight: 600; cursor: pointer;
   white-space: nowrap;
   text-transform: uppercase;
@@ -577,7 +577,7 @@ hr { border: none; border-top: 1px solid var(--border-faint); margin: 14px 0; }
 .auth-screen.show { display: flex; }
 .auth-inner { max-width: 360px; width: 100%; text-align: center; }
 .auth-logo {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Lora', serif;
   font-size: 36px; font-weight: 700; letter-spacing: 1px;
   color: var(--text-1);
   margin-bottom: 8px;
@@ -648,7 +648,7 @@ hr { border: none; border-top: 1px solid var(--border-faint); margin: 14px 0; }
   display: block; width: 100%;
   padding: 13px 20px; border-radius: 4px;
   border: none; background: var(--yes); color: #fff;
-  font-family: 'Playfair Display', serif;
+  font-family: 'Lora', serif;
   font-size: 16px; font-weight: 600; cursor: pointer;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -659,7 +659,7 @@ hr { border: none; border-top: 1px solid var(--border-faint); margin: 14px 0; }
   justify-content: center;
 }
 .auth-section-label {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Lora', serif;
   font-size: 11px; font-weight: 600; letter-spacing: .22em;
   text-transform: uppercase; color: var(--text-3);
   margin-bottom: 12px;
@@ -794,9 +794,12 @@ function isParty(w, playerId) {
 }
 
 // ── POOL HELPERS ─────────────────────────────────────────────────────────
+const OPTION_COLORS = ['#1a6b3c','#c23028','#2563eb','#d97706','#7c3aed','#0891b2','#be185d','#4d7c0f'];
+function getOptions(w) { return w.options || ['YES','NO']; }
 function poolBetList(w)         { return w && w.poolBets ? Object.values(w.poolBets) : []; }
 function poolTotal(w)           { return poolBetList(w).reduce((s, b) => s + b.amount, 0); }
 function poolSideTotal(w, side) { return poolBetList(w).filter(b => b.side === side).reduce((s, b) => s + b.amount, 0); }
+function poolOptionTotal(w, option) { return poolBetList(w).filter(b => (b.option || b.side) === option).reduce((s, b) => s + b.amount, 0); }
 
 // ── RENDER ────────────────────────────────────────────────────────────────
 function renderAll() {
@@ -1015,12 +1018,41 @@ function renderBets() {
 
 function renderParticipants(w) {
   const wtype = w.type || 'wager';
+  const options = getOptions(w);
+  const isYesNo = options.length === 2 && options[0] === 'YES' && options[1] === 'NO';
+
+  if (wtype === 'pool' && !isYesNo) {
+    // Multi-option pool: group by option
+    const optionBuckets = {};
+    for (const opt of options) optionBuckets[opt] = {};
+    for (const b of poolBetList(w)) {
+      const bOpt = b.option || b.side;
+      if (!optionBuckets[bOpt]) optionBuckets[bOpt] = {};
+      optionBuckets[bOpt][b.playerId] = (optionBuckets[bOpt][b.playerId] || 0) + b.amount;
+    }
+    let html = '';
+    for (let i = 0; i < options.length; i++) {
+      const opt = options[i];
+      const color = OPTION_COLORS[i % OPTION_COLORS.length];
+      const entries = Object.entries(optionBuckets[opt] || {});
+      if (!entries.length) continue;
+      const pHTML = entries.map(([id, amt]) => {
+        const p = S.players[id]; if (!p) return '';
+        return `<span class="participant"><span class="avatar-sm" style="background:${avatarColor(id)}">${initials(p.name)}</span>${esc(p.name)} <span class="participant-amt">${fmt(amt)}</span></span>`;
+      }).join('');
+      html += `<div class="side-group"><span class="side-label" style="background:${color}20;color:${color}">${esc(opt)}</span>${pHTML}</div>`;
+    }
+    return html ? `<div class="participants-sides">${html}</div>` : '';
+  }
+
+  // YES/NO pools and standard wagers
   const yesSide = {};
   const noSide = {};
 
   if (wtype === 'pool') {
     for (const b of poolBetList(w)) {
-      const bucket = b.side === 'YES' ? yesSide : noSide;
+      const bOpt = b.option || b.side;
+      const bucket = bOpt === 'YES' ? yesSide : noSide;
       bucket[b.playerId] = (bucket[b.playerId] || 0) + b.amount;
     }
   } else {
@@ -1064,32 +1096,55 @@ function renderVoteArea(w, player) {
   if (!past || w.status !== 'open') return '';
   const isMine = player && player.id === w.proposerId;
   const proposer = S.players[w.proposerId];
+  const options = getOptions(w);
+  const isYesNo = options.length === 2 && options[0] === 'YES' && options[1] === 'NO';
   const votes = w.votes || {};
-  const yesVotes = Object.values(votes).filter(v => v === 'YES').length;
-  const noVotes  = Object.values(votes).filter(v => v === 'NO').length;
-  const myVote = player ? (votes[player.id] || null) : null;
+
   let tally = '';
-  if (yesVotes || noVotes) {
-    tally = `<div style="font-size:12px;color:var(--text-3);margin:4px 0">Votes: ${yesVotes} YES, ${noVotes} NO</div>`;
+  if (Object.keys(votes).length) {
+    const voteCounts = {};
+    for (const v of Object.values(votes)) voteCounts[v] = (voteCounts[v] || 0) + 1;
+    tally = `<div style="font-size:12px;color:var(--text-3);margin:4px 0">Votes: ${Object.entries(voteCounts).map(([k,v]) => `${v} ${esc(k)}`).join(', ')}</div>`;
   }
+
   if (isMine) {
-    return `<div class="action-strip">
-      <span class="action-label">Past close date — resolve</span>
-      <div class="resolve-row">
-        <button class="btn-ryes" onclick="resolve('${w.id}','YES')">Resolve YES</button>
-        <button class="btn-rno"  onclick="resolve('${w.id}','NO')">Resolve NO</button>
-      </div>
+    if (isYesNo) {
+      return `<div class="action-strip">
+        <span class="action-label">Past close date — resolve</span>
+        <div class="resolve-row">
+          <button class="btn-ryes" onclick="resolve('${w.id}','YES')">Resolve YES</button>
+          <button class="btn-rno"  onclick="resolve('${w.id}','NO')">Resolve NO</button>
+        </div>
+      </div>${tally}`;
+    }
+    return `<div class="action-strip" style="flex-direction:column;align-items:stretch">
+      <span class="action-label">Past close date — pick the winner</span>
+      <div class="resolve-row" style="flex-wrap:wrap">${options.map((opt, i) => {
+        const c = OPTION_COLORS[i % OPTION_COLORS.length];
+        return `<button class="btn-ryes" style="background:${c}18;color:${c};border-color:${c}88" onclick="resolve('${w.id}','${esc(opt)}')">${esc(opt)}</button>`;
+      }).join('')}</div>
     </div>${tally}`;
   }
   if (player) {
-    const yVoted = myVote === 'YES' ? ' voted' : '';
-    const nVoted = myVote === 'NO'  ? ' voted' : '';
-    return `<div class="action-strip">
+    const myVote = votes[player.id] || null;
+    if (isYesNo) {
+      const yVoted = myVote === 'YES' ? ' voted' : '';
+      const nVoted = myVote === 'NO'  ? ' voted' : '';
+      return `<div class="action-strip">
+        <span class="action-label">Waiting for ${esc(proposer?.name || 'creator')} to resolve</span>
+        <div class="vote-row">
+          <button class="btn-vote yes${yVoted}" onclick="castVote('${w.id}','YES')">YES</button>
+          <button class="btn-vote no${nVoted}"  onclick="castVote('${w.id}','NO')">NO</button>
+        </div>
+      </div>${tally}`;
+    }
+    return `<div class="action-strip" style="flex-direction:column;align-items:stretch">
       <span class="action-label">Waiting for ${esc(proposer?.name || 'creator')} to resolve</span>
-      <div class="vote-row">
-        <button class="btn-vote yes${yVoted}" onclick="castVote('${w.id}','YES')">YES</button>
-        <button class="btn-vote no${nVoted}"  onclick="castVote('${w.id}','NO')">NO</button>
-      </div>
+      <div class="vote-row" style="flex-wrap:wrap">${options.map((opt, i) => {
+        const c = OPTION_COLORS[i % OPTION_COLORS.length];
+        const voted = myVote === opt ? ' voted' : '';
+        return `<button class="btn-vote${voted}" style="border-color:${c}88;color:${c}${voted ? ';background:' + c + '18' : ''}" onclick="castVote('${w.id}','${esc(opt)}')">${esc(opt)}</button>`;
+      }).join('')}</div>
     </div>${tally}`;
   }
   return tally;
@@ -1175,36 +1230,41 @@ function wagerCardPool(w) {
   const proposer = S.players[w.proposerId];
   const isMine   = player && player.id === w.proposerId;
   const past     = overdue(w);
+  const options  = getOptions(w);
+  const isYesNo  = options.length === 2 && options[0] === 'YES' && options[1] === 'NO';
 
-  const yesTotal = poolSideTotal(w, 'YES');
-  const noTotal  = poolSideTotal(w, 'NO');
   const total    = poolTotal(w);
 
   const myBets = player ? poolBetList(w).filter(b => b.playerId === player.id) : [];
   const canBet = player && !past && w.status === 'open';
 
-  // meta
-  const meta = [
-    `Pot: ${fmt(total)}`,
-    `Closes ${fmtDate(w.closeDate)}`,
-    past && w.status === 'open' ? `<span class="badge-overdue">Needs resolution</span>` : '',
-  ].filter(Boolean).join(' · ');
-
-  // action — lock to their side if they already bet
-  const myExistingSide = player ? (poolBetList(w).find(b => b.playerId === player.id)?.side || null) : null;
+  // action — lock to their option if they already bet
+  const myExistingOption = player ? ((b => b ? (b.option || b.side) : null)(poolBetList(w).find(b => b.playerId === player.id))) : null;
   let action = '';
   if (canBet) {
-    if (myExistingSide) {
-      action = `<div style="margin-top:12px">
-        <button class="btn-take ${myExistingSide.toLowerCase()}" style="width:100%" onclick="openPlacePoolBet('${w.id}','${myExistingSide}')">Add more on ${myExistingSide}</button>
-      </div>`;
-    } else {
+    if (myExistingOption) {
+      const optIdx = options.indexOf(myExistingOption);
+      const optColor = OPTION_COLORS[(optIdx >= 0 ? optIdx : 0) % OPTION_COLORS.length];
+      if (isYesNo) {
+        action = `<div style="margin-top:12px">
+          <button class="btn-take ${myExistingOption.toLowerCase()}" style="width:100%" onclick="openPlacePoolBet('${w.id}','${esc(myExistingOption)}')">Add more on ${esc(myExistingOption)}</button>
+        </div>`;
+      } else {
+        action = `<div style="margin-top:12px">
+          <button class="btn-take" style="width:100%;background:${optColor}18;color:${optColor};border-color:${optColor}88" onclick="openPlacePoolBet('${w.id}','${esc(myExistingOption)}')">Add more on ${esc(myExistingOption)}</button>
+        </div>`;
+      }
+    } else if (isYesNo) {
       action = `<div style="display:flex;gap:8px;margin-top:12px">
         <button class="btn-take yes" style="flex:1" onclick="openPlacePoolBet('${w.id}','YES')">Bet YES</button>
         <button class="btn-take no"  style="flex:1" onclick="openPlacePoolBet('${w.id}','NO')">Bet NO</button>
       </div>`;
+    } else {
+      action = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">${options.map((opt, i) => {
+        const c = OPTION_COLORS[i % OPTION_COLORS.length];
+        return `<button class="btn-take" style="flex:1;min-width:120px;background:${c}18;color:${c};border-color:${c}88" onclick="openPlacePoolBet('${w.id}','${esc(opt)}')">${esc(opt)}</button>`;
+      }).join('')}</div>`;
     }
-  } else if (past && w.status === 'open') {
   } else if (past && w.status === 'open') {
     action = renderVoteArea(w, player);
   }
@@ -1213,13 +1273,48 @@ function wagerCardPool(w) {
   let mine = '';
   if (myBets.length) {
     mine = `<div class="my-bets">${myBets.map(b => {
-      const cl = b.side === 'YES' ? 'pos' : 'neg';
-      return `<div class="my-bet-line"><span>You bet ${b.side}</span><span class="bet-${cl}-amt">${fmt(b.amount)}</span></div>`;
+      const bOpt = b.option || b.side;
+      const optIdx = options.indexOf(bOpt);
+      if (isYesNo) {
+        const cl = bOpt === 'YES' ? 'pos' : 'neg';
+        return `<div class="my-bet-line"><span>You bet ${esc(bOpt)}</span><span class="bet-${cl}-amt">${fmt(b.amount)}</span></div>`;
+      }
+      const c = OPTION_COLORS[(optIdx >= 0 ? optIdx : 0) % OPTION_COLORS.length];
+      return `<div class="my-bet-line"><span>You bet <span style="color:${c};font-weight:600">${esc(bOpt)}</span></span><span style="color:${c};font-weight:600">${fmt(b.amount)}</span></div>`;
     }).join('')}</div>`;
   }
 
   const editBtn = isAdmin() && w.status === 'open' ? `<button class="btn-link" style="font-size:12px;padding:0" onclick="openEditWager('${w.id}')">Edit</button>` : '';
   const sub = [fmtDate(w.closeDate)].join(' · ');
+
+  // Pool visualization
+  let poolViz = '';
+  if (isYesNo) {
+    const yesTotal = poolOptionTotal(w, 'YES');
+    const noTotal  = poolOptionTotal(w, 'NO');
+    poolViz = `<div class="pool-viz">
+      <div class="pool-bar">
+        <div class="pool-bar-yes" style="width:${total ? Math.round(yesTotal/total*100) : 50}%"></div>
+      </div>
+      <div class="pool-labels">
+        <span class="pool-label yes"><strong>${total ? Math.round(yesTotal/total*100) : 50}%</strong> YES · ${fmt(yesTotal)}</span>
+        <span class="pool-label no">${fmt(noTotal)} · NO <strong>${total ? Math.round(noTotal/total*100) : 50}%</strong></span>
+      </div>
+    </div>`;
+  } else {
+    const optionEmojis = ['\u{1F535}','\u{1F7E0}','\u{1F7E3}','\u{1F7E2}','\u{1F534}','\u{1F7E1}','\u{26AB}','\u{26AA}'];
+    poolViz = `<div class="pool-viz" style="display:flex;flex-direction:column;gap:6px">${options.map((opt, i) => {
+      const optTotal = poolOptionTotal(w, opt);
+      const betCount = poolBetList(w).filter(b => (b.option || b.side) === opt).length;
+      const c = OPTION_COLORS[i % OPTION_COLORS.length];
+      const emoji = optionEmojis[i % optionEmojis.length];
+      return `<div style="display:flex;align-items:center;gap:8px;font-size:14px">
+        <span style="color:${c};font-size:16px">${emoji}</span>
+        <span style="font-weight:600;color:${c};min-width:60px">${esc(opt)}</span>
+        <span style="color:var(--text-2)">${fmt(optTotal)} (${betCount} bet${betCount !== 1 ? 's' : ''})</span>
+      </div>`;
+    }).join('')}</div>`;
+  }
 
   return `<div class="card">
     <div class="wgr-category" style="display:flex;justify-content:space-between;align-items:center">
@@ -1228,17 +1323,10 @@ function wagerCardPool(w) {
     </div>
     <div class="wgr-question">${esc(w.question)}</div>
     <div class="wgr-subline">${sub}${past && w.status === 'open' ? ' · <span class="badge-overdue">Needs resolution</span>' : ''}</div>
-    <div class="pool-viz">
-      <div class="pool-bar">
-        <div class="pool-bar-yes" style="width:${total ? Math.round(yesTotal/total*100) : 50}%"></div>
-      </div>
-      <div class="pool-labels">
-        <span class="pool-label yes"><strong>${total ? Math.round(yesTotal/total*100) : 50}%</strong> YES · ${fmt(yesTotal)}</span>
-        <span class="pool-label no">${fmt(noTotal)} · NO <strong>${total ? Math.round(noTotal/total*100) : 50}%</strong></span>
-      </div>
-    </div>
+    ${poolViz}
     ${renderParticipants(w)}
     ${action}
+    ${mine}
   </div>`;
 }
 
@@ -1330,16 +1418,18 @@ function renderResolvedWager(w, player) {
 function renderResolvedPool(w, player) {
   const proposer = S.players[w.proposerId];
   const total = poolTotal(w);
+  const options = getOptions(w);
+  const isYesNo = options.length === 2 && options[0] === 'YES' && options[1] === 'NO';
   const myParty = player && isParty(w, player.id);
   let myLine = '';
   if (myParty) {
     const myBets = poolBetList(w).filter(b => b.playerId === player.id);
-    const myStaked = myBets.reduce((s, b) => s + b.amount, 0);
-    const winTotal = poolSideTotal(w, w.resolution);
+    const winTotal = poolOptionTotal(w, w.resolution);
     const loseTotal = total - winTotal;
     let net = 0;
     for (const b of myBets) {
-      if (b.side === w.resolution) {
+      const bOpt = b.option || b.side;
+      if (bOpt === w.resolution) {
         if (loseTotal === 0) {
           // refund scenario — net 0
         } else {
@@ -1356,10 +1446,21 @@ function renderResolvedPool(w, player) {
       <span class="${cls}">${sign}${fmt(Math.abs(net))}</span>
     </div></div>`;
   }
+
+  // Resolution badge
+  let resBadge = '';
+  if (isYesNo) {
+    resBadge = `<span class="badge badge-${w.resolution.toLowerCase()}">${esc(w.resolution)}</span>`;
+  } else {
+    const resIdx = options.indexOf(w.resolution);
+    const c = OPTION_COLORS[(resIdx >= 0 ? resIdx : 0) % OPTION_COLORS.length];
+    resBadge = `<span class="badge" style="background:${c}18;color:${c}">${esc(w.resolution)}</span>`;
+  }
+
   return `<div class="card card-resolved">
     <div class="res-header">
       <div class="wgr-category" style="margin:0">${esc(w.category)}<span class="type-chip pool">Pool</span></div>
-      <span class="badge badge-${w.resolution.toLowerCase()}">${w.resolution}</span>
+      ${resBadge}
     </div>
     <div class="wgr-question">${esc(w.question)}</div>
     <div class="wgr-meta">
@@ -1495,6 +1596,8 @@ function pickType(t) {
   if (poolBtn)  poolBtn.classList.toggle('on', t === 'pool');
   const fields = document.getElementById('wagerFields');
   if (fields) fields.style.display = t === 'pool' ? 'none' : '';
+  const poolOptionsField = document.getElementById('poolOptionsField');
+  if (poolOptionsField) poolOptionsField.style.display = t === 'pool' ? '' : 'none';
 }
 function openCreateWager() {
   if (!me()) { toast('Setting up your account…'); return; }
@@ -1516,6 +1619,12 @@ function openCreateWager() {
     <div class="field">
       <label class="field-label">Category</label>
       <select id="wC">${CATS.map(c => `<option>${c}</option>`).join('')}</select>
+    </div>
+    <div id="poolOptionsField" style="display:none">
+      <div class="field">
+        <label class="field-label">Options (comma separated)</label>
+        <input type="text" id="wOptions" placeholder="Leave blank for YES / NO" maxlength="200">
+      </div>
     </div>
     <div id="wagerFields">
       <div class="field">
@@ -1577,6 +1686,12 @@ function createWager() {
   const updates = {};
 
   if (_pickedType === 'pool') {
+    const rawOpts = (document.getElementById('wOptions')?.value || '').trim();
+    let parsedOptions = ['YES','NO'];
+    if (rawOpts) {
+      parsedOptions = rawOpts.split(',').map(s => s.trim()).filter(Boolean);
+      if (parsedOptions.length < 2) return toast('Enter at least 2 options');
+    }
     updates[`${DB_PATH}/wagers/${newId}`] = {
       type: 'pool',
       question: q, category: cat, closeDate: date,
@@ -1584,6 +1699,7 @@ function createWager() {
       proposerSide: null,
       proposerStake: 0,
       takerPool: 0,
+      options: parsedOptions,
       status: 'open',
       resolution: null, resolvedAt: null,
       createdAt: TS()
@@ -1620,6 +1736,25 @@ function openEditWager(wagerId) {
   if (!isAdmin()) return;
   const closeDT = w.closeDate ? (w.closeDate.length > 10 ? w.closeDate : w.closeDate + 'T23:59') : '';
   const nowDT = new Date().toISOString().slice(0,16);
+  const wtype = w.type || 'wager';
+  const options = getOptions(w);
+
+  let addOptionHTML = '';
+  if (wtype === 'pool') {
+    addOptionHTML = `<hr>
+    <div class="field">
+      <label class="field-label">Current options</label>
+      <p class="helper" style="margin-bottom:6px">${options.map(o => esc(o)).join(', ')}</p>
+    </div>
+    <div class="field">
+      <label class="field-label">Add option</label>
+      <div style="display:flex;gap:6px">
+        <input type="text" id="eNewOption" placeholder="New option name" maxlength="40" style="flex:1">
+        <button type="button" class="btn-action" onclick="addPoolOption('${wagerId}')">Add</button>
+      </div>
+    </div>`;
+  }
+
   openSheet(`<div class="sheet-title">Edit Bet</div>
     <div class="field">
       <label class="field-label">Question</label>
@@ -1633,7 +1768,24 @@ function openEditWager(wagerId) {
       <label class="field-label">Closes at</label>
       <input type="datetime-local" id="eD" value="${closeDT}" min="${nowDT}">
     </div>
+    ${addOptionHTML}
     <button class="btn-primary" onclick="saveWagerEdit('${wagerId}')">Save changes</button>`);
+}
+
+function addPoolOption(wagerId) {
+  const w = S.wagers[wagerId]; if (!w) return;
+  if (!isAdmin()) return;
+  if (!_db) return toast('Not connected');
+  const input = document.getElementById('eNewOption');
+  const newOpt = (input?.value || '').trim();
+  if (!newOpt) return toast('Enter an option name');
+  const existing = getOptions(w);
+  if (existing.includes(newOpt)) return toast('Option already exists');
+  const updated = [...existing, newOpt];
+  _db.ref(`${DB_PATH}/wagers/${wagerId}/options`).set(updated).then(() => {
+    toast('Option added');
+    openEditWager(wagerId); // re-render the edit sheet
+  }).catch(e => { console.error('addPoolOption:', e); toast('Failed to add option'); });
 }
 
 function saveWagerEdit(wagerId) {
@@ -1842,7 +1994,7 @@ function settleApplyPayouts(w, outcome) {
 function settlePool(w, outcome) {
   const bets = poolBetList(w);
   const totalPot = bets.reduce((s, b) => s + b.amount, 0);
-  const winTotal = bets.filter(b => b.side === outcome).reduce((s, b) => s + b.amount, 0);
+  const winTotal = bets.filter(b => (b.option || b.side) === outcome).reduce((s, b) => s + b.amount, 0);
   const loseTotal = totalPot - winTotal;
 
   const balanceDelta = {};
@@ -1860,7 +2012,7 @@ function settlePool(w, outcome) {
   } else {
     // Normal: winners split total pot proportionally
     for (const b of bets) {
-      if (b.side === outcome) {
+      if ((b.option || b.side) === outcome) {
         const payout = Math.floor(b.amount / winTotal * totalPot);
         bump(balanceDelta, b.playerId, payout);
         bump(winDelta, b.playerId, 1);
@@ -1893,46 +2045,85 @@ function settlePool(w, outcome) {
 }
 
 // ── POOL BETTING ──────────────────────────────────────────────────────────
-let _poolSide = 'YES';
-function openPlacePoolBet(wagerId, prefSide) {
+let _poolOption = 'YES';
+function openPlacePoolBet(wagerId, prefOption) {
   if (!me()) { toast('Setting up your account…'); return; }
   const w = S.wagers[wagerId]; if (!w) return;
   const player = me();
   if (w.status !== 'open') return toast('Bet is closed');
   if (overdue(w)) return toast('Past close date');
 
-  // Lock to their existing side if they've already bet
-  const myExisting = poolBetList(w).filter(b => b.playerId === player.id);
-  const lockedSide = myExisting.length ? myExisting[0].side : null;
-  _poolSide = lockedSide || prefSide || 'YES';
+  const options = getOptions(w);
+  const isYesNo = options.length === 2 && options[0] === 'YES' && options[1] === 'NO';
 
-  const yesTotal = poolSideTotal(w, 'YES');
-  const noTotal  = poolSideTotal(w, 'NO');
+  // Lock to their existing option if they've already bet
+  const myExisting = poolBetList(w).filter(b => b.playerId === player.id);
+  const lockedOption = myExisting.length ? (myExisting[0].option || myExisting[0].side) : null;
+  _poolOption = lockedOption || prefOption || options[0];
+
   const cap = player.balance || 0;
   const presets = [25, 50, 100, 250].filter(v => v <= cap);
 
-  const sideToggle = lockedSide
-    ? `<div class="field">
+  // Pool summary
+  let poolSummary = '';
+  if (isYesNo) {
+    const yesTotal = poolOptionTotal(w, 'YES');
+    const noTotal  = poolOptionTotal(w, 'NO');
+    poolSummary = `<div class="pool-summary">
+      <div class="pool-side yes"><strong>${fmt(yesTotal)}</strong><br>YES pool</div>
+      <div class="pool-side no"><strong>${fmt(noTotal)}</strong><br>NO pool</div>
+    </div>`;
+  } else {
+    poolSummary = `<div style="display:flex;flex-direction:column;gap:4px;margin:10px 0">${options.map((opt, i) => {
+      const c = OPTION_COLORS[i % OPTION_COLORS.length];
+      const t = poolOptionTotal(w, opt);
+      return `<div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 10px;border-radius:4px;background:${c}10;border:1px solid ${c}30"><span style="color:${c};font-weight:600">${esc(opt)}</span><span style="color:var(--text-2)">${fmt(t)}</span></div>`;
+    }).join('')}</div>`;
+  }
+
+  // Option picker
+  let optionPicker = '';
+  if (lockedOption) {
+    if (isYesNo) {
+      optionPicker = `<div class="field">
         <label class="field-label">Your side (locked)</label>
         <div class="side-toggle">
-          <button type="button" class="side-btn ${lockedSide.toLowerCase()} on" disabled>${lockedSide}</button>
-        </div>
-       </div>`
-    : `<div class="field">
-        <label class="field-label">Your side</label>
-        <div class="side-toggle">
-          <button type="button" class="side-btn yes ${_poolSide==='YES'?'on':''}" id="poolSideYes" onclick="pickPoolSide('YES')">YES</button>
-          <button type="button" class="side-btn no  ${_poolSide==='NO'?'on':''}" id="poolSideNo"  onclick="pickPoolSide('NO')">NO</button>
+          <button type="button" class="side-btn ${lockedOption.toLowerCase()} on" disabled>${esc(lockedOption)}</button>
         </div>
        </div>`;
+    } else {
+      const li = options.indexOf(lockedOption);
+      const c = OPTION_COLORS[(li >= 0 ? li : 0) % OPTION_COLORS.length];
+      optionPicker = `<div class="field">
+        <label class="field-label">Your pick (locked)</label>
+        <div class="side-toggle">
+          <button type="button" class="side-btn on" style="background:${c}18;color:${c};border-color:${c}88" disabled>${esc(lockedOption)}</button>
+        </div>
+       </div>`;
+    }
+  } else if (isYesNo) {
+    optionPicker = `<div class="field">
+      <label class="field-label">Your side</label>
+      <div class="side-toggle">
+        <button type="button" class="side-btn yes ${_poolOption==='YES'?'on':''}" id="poolSideYes" onclick="pickPoolOption('YES')">YES</button>
+        <button type="button" class="side-btn no  ${_poolOption==='NO'?'on':''}" id="poolSideNo"  onclick="pickPoolOption('NO')">NO</button>
+      </div>
+     </div>`;
+  } else {
+    optionPicker = `<div class="field">
+      <label class="field-label">Your pick</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">${options.map((opt, i) => {
+        const c = OPTION_COLORS[i % OPTION_COLORS.length];
+        const isOn = _poolOption === opt;
+        return `<button type="button" class="side-btn${isOn ? ' on' : ''}" id="poolOpt_${i}" style="${isOn ? 'background:' + c + '18;color:' + c + ';border-color:' + c + '88' : ''}" onclick="pickPoolOption('${esc(opt)}')">${esc(opt)}</button>`;
+      }).join('')}</div>
+     </div>`;
+  }
 
   openSheet(`<div class="sheet-title">Place a Pool Bet</div>
     <div class="sheet-sub">${esc(w.question)}</div>
-    <div class="pool-summary">
-      <div class="pool-side yes"><strong>${fmt(yesTotal)}</strong><br>YES pool</div>
-      <div class="pool-side no"><strong>${fmt(noTotal)}</strong><br>NO pool</div>
-    </div>
-    ${sideToggle}
+    ${poolSummary}
+    ${optionPicker}
     <div class="field">
       <label class="field-label">Amount &nbsp;<span style="font-weight:400;color:var(--text-3)">Balance: ${fmt(cap)}</span></label>
       ${presets.length ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">${
@@ -1944,10 +2135,35 @@ function openPlacePoolBet(wagerId, prefSide) {
   setTimeout(() => document.getElementById('poolAmt')?.focus(), 300);
 }
 
-function pickPoolSide(s) {
-  _poolSide = s;
-  document.getElementById('poolSideYes').classList.toggle('on', s === 'YES');
-  document.getElementById('poolSideNo').classList.toggle('on', s === 'NO');
+function pickPoolOption(opt) {
+  _poolOption = opt;
+  // Update button states — works for both YES/NO and multi-option
+  const yesBtn = document.getElementById('poolSideYes');
+  const noBtn  = document.getElementById('poolSideNo');
+  if (yesBtn) yesBtn.classList.toggle('on', opt === 'YES');
+  if (noBtn)  noBtn.classList.toggle('on', opt === 'NO');
+  // Multi-option buttons
+  document.querySelectorAll('[id^="poolOpt_"]').forEach(btn => {
+    const btnOpt = btn.textContent;
+    const isOn = btnOpt === opt;
+    btn.classList.toggle('on', isOn);
+    if (isOn) {
+      // Find the option index to get its color
+      const w = Object.values(S.wagers).find(w => w.type === 'pool' && getOptions(w).includes(opt));
+      if (w) {
+        const options = getOptions(w);
+        const i = options.indexOf(opt);
+        const c = OPTION_COLORS[(i >= 0 ? i : 0) % OPTION_COLORS.length];
+        btn.style.background = c + '18';
+        btn.style.color = c;
+        btn.style.borderColor = c + '88';
+      }
+    } else {
+      btn.style.background = '';
+      btn.style.color = '';
+      btn.style.borderColor = '';
+    }
+  });
 }
 
 function placePoolBet(wagerId) {
@@ -1960,19 +2176,22 @@ function placePoolBet(wagerId) {
   if (overdue(w))                return toast('Past close date');
   if (!_db) return toast('Not connected');
 
-  // Can't bet both sides
+  const options = getOptions(w);
+  if (!options.includes(_poolOption)) return toast('Invalid option');
+
+  // Can't bet multiple options
   const myExisting = poolBetList(w).filter(b => b.playerId === player.id);
-  if (myExisting.length && myExisting[0].side !== _poolSide) return toast('You already bet the other side');
+  if (myExisting.length && (myExisting[0].option || myExisting[0].side) !== _poolOption) return toast('You already bet a different option');
 
   const betId = _db.ref(`${DB_PATH}/wagers/${wagerId}/poolBets`).push().key;
   const updates = {};
   updates[`${DB_PATH}/wagers/${wagerId}/poolBets/${betId}`] = {
-    playerId: player.id, side: _poolSide, amount: amt, placedAt: TS()
+    playerId: player.id, option: _poolOption, amount: amt, placedAt: TS()
   };
   updates[`${DB_PATH}/players/${player.id}/balance`] = (player.balance||0) - amt;
   _db.ref().update(updates).then(() => {
     closeSheet();
-    toast(`Bet ${fmt(amt)} on ${_poolSide}`);
+    toast(`Bet ${fmt(amt)} on ${_poolOption}`);
   }).catch(e => { console.error('placePoolBet:', e); toast('Bet failed — try again'); });
 }
 

@@ -520,6 +520,22 @@ hr { border: none; border-top: 1px solid var(--border-faint); margin: 14px 0; }
   border-color: #1a1a1a; color: #fff;
   background: #1a1a1a; font-weight: 600;
 }
+.option-chips {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin-bottom: 10px; min-height: 0;
+}
+.option-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 5px 10px; border-radius: 16px;
+  background: var(--bg); border: 1px solid var(--border);
+  font-size: 13px; font-weight: 500; color: var(--text-1);
+}
+.option-chip button {
+  background: none; border: none; cursor: pointer;
+  font-size: 16px; line-height: 1; color: var(--text-3);
+  padding: 0 0 0 2px;
+}
+.option-chip button:active { color: var(--no); }
 .participants-sides {
   margin-top: 12px; padding-top: 12px;
   border-top: 1px solid var(--border-faint);
@@ -1591,6 +1607,30 @@ function openPlayerList() {
 // ── CREATE WAGER ──────────────────────────────────────────────────────────
 let _pickedSide = 'YES';
 let _pickedType = 'wager';
+let _createOptions = [];
+
+function renderCreateOptionChips() {
+  const el = document.getElementById('poolOptionChips');
+  if (!el) return;
+  el.innerHTML = _createOptions.map((opt, i) =>
+    `<span class="option-chip">${esc(opt)} <button type="button" onclick="removeCreateOption(${i})">×</button></span>`
+  ).join('');
+}
+function addCreateOption() {
+  const input = document.getElementById('wNewOption');
+  if (!input) return;
+  const val = input.value.trim();
+  if (!val) return;
+  if (_createOptions.some(o => o.toLowerCase() === val.toLowerCase())) return toast('Already added');
+  _createOptions.push(val);
+  input.value = '';
+  renderCreateOptionChips();
+  input.focus();
+}
+function removeCreateOption(i) {
+  _createOptions.splice(i, 1);
+  renderCreateOptionChips();
+}
 function pickType(t) {
   _pickedType = t;
   const wagerBtn = document.getElementById('typeWager');
@@ -1607,6 +1647,7 @@ function openCreateWager() {
   const nowDT = new Date().toISOString().slice(0,16);
   _pickedSide = 'YES';
   _pickedType = 'wager';
+  _createOptions = [];
   openSheet(`<div class="sheet-title">New Bet</div>
     <div class="field">
       <label class="field-label">Type</label>
@@ -1625,8 +1666,13 @@ function openCreateWager() {
     </div>
     <div id="poolOptionsField" style="display:none">
       <div class="field">
-        <label class="field-label">Options (comma separated)</label>
-        <input type="text" id="wOptions" placeholder="Leave blank for YES / NO" maxlength="200">
+        <label class="field-label">Options</label>
+        <div id="poolOptionChips" class="option-chips"></div>
+        <div style="display:flex;gap:6px">
+          <input type="text" id="wNewOption" placeholder="Add an option…" maxlength="40" autocapitalize="words" style="flex:1">
+          <button type="button" class="btn-action" onclick="addCreateOption()" style="flex-shrink:0;padding:10px 14px">Add</button>
+        </div>
+        <p class="helper" style="margin-top:6px">Add at least 2. Leave empty for YES / NO.</p>
       </div>
     </div>
     <div id="wagerFields">
@@ -1654,7 +1700,11 @@ function openCreateWager() {
       <input type="datetime-local" id="wD" min="${nowDT}">
     </div>
     <button class="btn-primary" onclick="createWager()">Post Bet</button>`);
-  setTimeout(() => document.getElementById('wQ')?.focus(), 300);
+  setTimeout(() => {
+    document.getElementById('wQ')?.focus();
+    const optInput = document.getElementById('wNewOption');
+    if (optInput) optInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addCreateOption(); } });
+  }, 300);
 }
 
 function pickSide(s) {
@@ -1689,12 +1739,7 @@ function createWager() {
   const updates = {};
 
   if (_pickedType === 'pool') {
-    const rawOpts = (document.getElementById('wOptions')?.value || '').trim();
-    let parsedOptions = ['YES','NO'];
-    if (rawOpts) {
-      parsedOptions = rawOpts.split(',').map(s => s.trim()).filter(Boolean);
-      if (parsedOptions.length < 2) return toast('Enter at least 2 options');
-    }
+    const poolOpts = _createOptions.length >= 2 ? [..._createOptions] : ['YES','NO'];
     updates[`${DB_PATH}/wagers/${newId}`] = {
       type: 'pool',
       question: q, category: cat, closeDate: date,
@@ -1702,7 +1747,7 @@ function createWager() {
       proposerSide: null,
       proposerStake: 0,
       takerPool: 0,
-      options: parsedOptions,
+      options: poolOpts,
       status: 'open',
       resolution: null, resolvedAt: null,
       createdAt: TS()

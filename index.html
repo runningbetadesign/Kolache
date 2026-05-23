@@ -647,19 +647,23 @@ function renderAuthScreen() {
   if (S.authStatus === 'signedout') {
     // Request-to-join is the primary CTA. Sign-in is the secondary path
     // for already-approved users.
+    // iOS autofill needs a real <form> + type="submit" button to commit
+    // values reliably before the handler reads them. Without this, tapping
+    // the button after autofilling can read empty .value strings.
     body.innerHTML = `
       <p class="auth-msg">Kolache is invite-only. Request access below and the admin will let you in.</p>
       <div class="auth-section-label">New here? Request access</div>
-      <div class="auth-form">
-        <input type="text" id="reqName" placeholder="Your name" maxlength="40" autocomplete="name" autocapitalize="words">
-        <input type="email" id="reqEmail" placeholder="Your Google email" autocomplete="email" inputmode="email">
-      </div>
-      <button class="btn-primary-auth" onclick="submitRequest()">Request access</button>
+      <form id="reqForm" onsubmit="event.preventDefault(); submitRequest(); return false;" novalidate>
+        <div class="auth-form">
+          <input type="text"  id="reqName"  name="name"  placeholder="Your name" maxlength="40" autocomplete="name" autocapitalize="words" required>
+          <input type="email" id="reqEmail" name="email" placeholder="Your Google email" autocomplete="email" inputmode="email" required>
+        </div>
+        <button type="submit" class="btn-primary-auth">Request access</button>
+      </form>
       <div class="auth-divider">or</div>
       <div class="auth-section-label">Already approved?</div>
       <button class="btn-google full" onclick="signIn()">${GOOGLE_ICON} Sign in with Google</button>
     `;
-    setTimeout(() => document.getElementById('reqName')?.focus(), 80);
     return;
   }
   if (S.authStatus === 'requested') {

@@ -647,23 +647,31 @@ function renderAuthScreen() {
   if (S.authStatus === 'signedout') {
     // Request-to-join is the primary CTA. Sign-in is the secondary path
     // for already-approved users.
-    // iOS autofill needs a real <form> + type="submit" button to commit
-    // values reliably before the handler reads them. Without this, tapping
-    // the button after autofilling can read empty .value strings.
+    //
+    // iOS autofill quirks: read values via FormData (more reliable than
+    // input.value right after autofill commits) and wire handlers with
+    // addEventListener rather than inline onsubmit-via-innerHTML, which
+    // iOS Safari sometimes ignores. We also attach the same handler to
+    // the button's click event as a backup in case the form's submit
+    // event doesn't fire for some reason.
     body.innerHTML = `
       <p class="auth-msg">Kolache is invite-only. Request access below and the admin will let you in.</p>
       <div class="auth-section-label">New here? Request access</div>
-      <form id="reqForm" onsubmit="event.preventDefault(); submitRequest(); return false;" novalidate>
+      <form id="reqForm" novalidate>
         <div class="auth-form">
-          <input type="text"  id="reqName"  name="name"  placeholder="Your name" maxlength="40" autocomplete="name" autocapitalize="words" required>
-          <input type="email" id="reqEmail" name="email" placeholder="Your Google email" autocomplete="email" inputmode="email" required>
+          <input type="text"  id="reqName"  name="name"  placeholder="Your name" maxlength="40" autocomplete="name" autocapitalize="words">
+          <input type="email" id="reqEmail" name="email" placeholder="Your Google email" autocomplete="email" inputmode="email">
         </div>
-        <button type="submit" class="btn-primary-auth">Request access</button>
+        <button type="submit" id="reqSubmit" class="btn-primary-auth">Request access</button>
       </form>
       <div class="auth-divider">or</div>
       <div class="auth-section-label">Already approved?</div>
       <button class="btn-google full" onclick="signIn()">${GOOGLE_ICON} Sign in with Google</button>
     `;
+    const form = document.getElementById('reqForm');
+    const go = (e) => { e.preventDefault(); submitRequest(form); return false; };
+    form.addEventListener('submit', go);
+    document.getElementById('reqSubmit').addEventListener('click', go);
     return;
   }
   if (S.authStatus === 'requested') {
@@ -686,23 +694,67 @@ function renderAuthScreen() {
   }
 }
 
-function submitRequest() {
-  const name  = (document.getElementById('reqName')?.value  || '').trim();
-  const email = (document.getElementById('reqEmail')?.value || '').trim().toLowerCase();
-  if (!name)                       return toast('Please enter your name');
+// Guard against double-submit while a write is in flight.
+let _submitInFlight = false;
+
+// formEl is the <form> element (passed by the listener). FormData reads from
+// the form's own snapshot of inputs, which is more reliable than .value
+// immediately after iOS autofill commits.
+function submitRequest(formEl) {
+  if (_submitInFlight) return;
+  formEl = formEl || document.getElementById('reqForm');
+
+  // iOS autofill quirk: blur the active input so the autofill UI doesn't
+  // capture the next tap. Reading FormData also forces Safari to "commit"
+  // pending autofill values into the inputs' .value.
+  try { document.activeElement?.blur(); } catch(e) {}
+
+  const nameInput  = document.getElementById('reqName');
+  const emailInput = document.getElementById('reqEmail');
+  const fd = formEl ? new FormData(formEl) : null;
+
+  // Belt-and-suspenders: prefer FormData, fall back to .value.
+  let name  = (fd?.get('name')  || nameInput?.value  || '').toString().trim();
+  let email = (fd?.get('email') || emailInput?.value || '').toString().trim().toLowerCase();
+
+  if (!name)                          return toast('Please enter your name');
   if (!email || !email.includes('@')) return toast('Please enter a valid email');
-  if (!_db)                        return toast('Not connected — try again');
+  if (!_db)                           return toast('Not connected — try again');
+
+  // Immediate visible feedback so the user knows the tap registered, even
+  // before the network round-trip completes. We don't transition state
+  // until the write actually lands — that way a rules denial or network
+  // failure surfaces a real error instead of a confusing flicker.
+  const submitBtn = document.getElementById('reqSubmit');
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending…';
+    submitBtn.style.opacity = '0.7';
+  }
+  _submitInFlight = true;
+  toast('Sending request…');
+
   const ek = emailKey(email);
   _db.ref(`${DB_PATH}/pending/${ek}`).set({
     name, email, requestedAt: TS()
   }).then(() => {
+    _submitInFlight = false;
     try { localStorage.setItem('kolache_requested', email); } catch(e) {}
     S.authStatus = 'requested';
     renderAll();
     toast('Request sent!');
   }).catch(e => {
+    _submitInFlight = false;
     console.error('submitRequest:', e);
-    toast('Submission failed — try again');
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Request access';
+      submitBtn.style.opacity = '';
+    }
+    // Show the actual error so the user (and we) can see what's wrong
+    // instead of a silent "Submission failed". Most likely culprits:
+    // PERMISSION_DENIED (rules issue) or network errors.
+    toast('Failed: ' + (e?.code || e?.message || 'unknown') + ' — try again');
   });
 }
 

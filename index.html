@@ -1119,13 +1119,21 @@ function wagerCardPool(w) {
     past && w.status === 'open' ? `<span class="badge-overdue">Needs resolution</span>` : '',
   ].filter(Boolean).join(' · ');
 
-  // action
+  // action — lock to their side if they already bet
+  const myExistingSide = player ? (poolBetList(w).find(b => b.playerId === player.id)?.side || null) : null;
   let action = '';
   if (canBet) {
-    action = `<div style="display:flex;gap:8px;margin-top:12px">
-      <button class="btn-take yes" style="flex:1" onclick="openPlacePoolBet('${w.id}')">Bet YES</button>
-      <button class="btn-take no"  style="flex:1" onclick="openPlacePoolBet('${w.id}')">Bet NO</button>
-    </div>`;
+    if (myExistingSide) {
+      action = `<div style="margin-top:12px">
+        <button class="btn-take ${myExistingSide.toLowerCase()}" style="width:100%" onclick="openPlacePoolBet('${w.id}','${myExistingSide}')">Add more on ${myExistingSide}</button>
+      </div>`;
+    } else {
+      action = `<div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn-take yes" style="flex:1" onclick="openPlacePoolBet('${w.id}','YES')">Bet YES</button>
+        <button class="btn-take no"  style="flex:1" onclick="openPlacePoolBet('${w.id}','NO')">Bet NO</button>
+      </div>`;
+    }
+  } else if (past && w.status === 'open') {
   } else if (past && w.status === 'open') {
     action = renderVoteArea(w, player);
   }
@@ -1817,17 +1825,37 @@ function settlePool(w, outcome) {
 
 // ── POOL BETTING ──────────────────────────────────────────────────────────
 let _poolSide = 'YES';
-function openPlacePoolBet(wagerId) {
+function openPlacePoolBet(wagerId, prefSide) {
   if (!me()) { toast('Setting up your account…'); return; }
   const w = S.wagers[wagerId]; if (!w) return;
   const player = me();
   if (w.status !== 'open') return toast('Bet is closed');
   if (overdue(w)) return toast('Past close date');
-  _poolSide = 'YES';
+
+  // Lock to their existing side if they've already bet
+  const myExisting = poolBetList(w).filter(b => b.playerId === player.id);
+  const lockedSide = myExisting.length ? myExisting[0].side : null;
+  _poolSide = lockedSide || prefSide || 'YES';
+
   const yesTotal = poolSideTotal(w, 'YES');
   const noTotal  = poolSideTotal(w, 'NO');
   const cap = player.balance || 0;
   const presets = [25, 50, 100, 250].filter(v => v <= cap);
+
+  const sideToggle = lockedSide
+    ? `<div class="field">
+        <label class="field-label">Your side (locked)</label>
+        <div class="side-toggle">
+          <button type="button" class="side-btn ${lockedSide.toLowerCase()} on" disabled>${lockedSide}</button>
+        </div>
+       </div>`
+    : `<div class="field">
+        <label class="field-label">Your side</label>
+        <div class="side-toggle">
+          <button type="button" class="side-btn yes ${_poolSide==='YES'?'on':''}" id="poolSideYes" onclick="pickPoolSide('YES')">YES</button>
+          <button type="button" class="side-btn no  ${_poolSide==='NO'?'on':''}" id="poolSideNo"  onclick="pickPoolSide('NO')">NO</button>
+        </div>
+       </div>`;
 
   openSheet(`<div class="sheet-title">Place a Pool Bet</div>
     <div class="sheet-sub">${esc(w.question)}</div>
@@ -1835,13 +1863,7 @@ function openPlacePoolBet(wagerId) {
       <div class="pool-side yes"><strong>${fmt(yesTotal)}</strong><br>YES pool</div>
       <div class="pool-side no"><strong>${fmt(noTotal)}</strong><br>NO pool</div>
     </div>
-    <div class="field">
-      <label class="field-label">Your side</label>
-      <div class="side-toggle">
-        <button type="button" class="side-btn yes on" id="poolSideYes" onclick="pickPoolSide('YES')">YES</button>
-        <button type="button" class="side-btn no"     id="poolSideNo"  onclick="pickPoolSide('NO')">NO</button>
-      </div>
-    </div>
+    ${sideToggle}
     <div class="field">
       <label class="field-label">Amount &nbsp;<span style="font-weight:400;color:var(--text-3)">Balance: ${fmt(cap)}</span></label>
       ${presets.length ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">${
@@ -1868,6 +1890,10 @@ function placePoolBet(wagerId) {
   if (w.status !== 'open')       return toast('Bet is no longer open');
   if (overdue(w))                return toast('Past close date');
   if (!_db) return toast('Not connected');
+
+  // Can't bet both sides
+  const myExisting = poolBetList(w).filter(b => b.playerId === player.id);
+  if (myExisting.length && myExisting[0].side !== _poolSide) return toast('You already bet the other side');
 
   const betId = _db.ref(`${DB_PATH}/wagers/${wagerId}/poolBets`).push().key;
   const updates = {};

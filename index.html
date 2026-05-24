@@ -2342,18 +2342,12 @@ function handleSignedIn(user) {
     }
   }).catch(e => {
     console.error('allowlist check:', e);
-    // Recover: treat as allowed if admin, otherwise show sign-in so user
-    // can retry instead of spinning forever.
-    if (isAdmin()) {
-      S.authStatus = 'allowed';
-      ensurePlayerRecord(user);
-      attachDataListeners();
-      renderAll();
-    } else {
-      S.authStatus = 'signedout';
-      renderAll();
-      toast('Something went wrong — try signing in again');
-    }
+    // On error, let them in anyway — play money, real security is the
+    // Google sign-in itself. Better to false-open than lock people out.
+    S.authStatus = 'allowed';
+    ensurePlayerRecord(user);
+    attachDataListeners();
+    renderAll();
   });
 }
 
@@ -2450,16 +2444,18 @@ function initSync() {
     return;
   }
 
-  // Safety net: if auth doesn't resolve within 5s (iOS Safari IndexedDB
+  // Safety net: if auth doesn't resolve within 8s (iOS Safari IndexedDB
   // delays, back-forward cache, etc.), drop to sign-in instead of spinning.
   let authResolved = false;
   setTimeout(() => {
     if (!authResolved && S.authStatus === 'init') {
       console.warn('Auth timeout — falling back to signedout');
-      S.authStatus = 'signedout';
+      let prev = null;
+      try { prev = localStorage.getItem('kolache_requested'); } catch(e) {}
+      S.authStatus = prev ? 'requested' : 'signedout';
       renderAll();
     }
-  }, 5000);
+  }, 8000);
 
   firebase.auth().onAuthStateChanged(user => {
     authResolved = true;

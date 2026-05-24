@@ -1022,7 +1022,13 @@ function renderBets() {
   if (_betFilter === 'mine' && player) {
     filtered = all.filter(w => isParty(w, player.id));
   } else if (_betFilter === 'open') {
-    filtered = all.filter(w => !overdue(w));
+    filtered = all.filter(w => {
+      if (overdue(w) || w.status !== 'open') return false;
+      if (!player) return true;
+      const wtype = w.type || 'wager';
+      if (wtype === 'pool') return true;
+      return w.proposerId !== player.id && poolRemaining(w) > 0;
+    });
   } else if (_betFilter === 'closing') {
     filtered = all.filter(w => overdue(w));
   }
@@ -1031,7 +1037,7 @@ function renderBets() {
   const filterBar = `<div class="filter-bar">
     <button class="filter-btn ${_betFilter === 'all' ? 'on' : ''}" onclick="setBetFilter('all')">All</button>
     <button class="filter-btn ${_betFilter === 'mine' ? 'on' : ''}" onclick="setBetFilter('mine')">My Bets</button>
-    <button class="filter-btn ${_betFilter === 'open' ? 'on' : ''}" onclick="setBetFilter('open')">Open</button>
+    <button class="filter-btn ${_betFilter === 'open' ? 'on' : ''}" onclick="setBetFilter('open')">Bet Now</button>
     <button class="filter-btn ${_betFilter === 'closing' ? 'on' : ''}" onclick="setBetFilter('closing')">Needs Resolution</button>
   </div>`;
 

@@ -2342,7 +2342,18 @@ function handleSignedIn(user) {
     }
   }).catch(e => {
     console.error('allowlist check:', e);
-    toast('Access check failed — try again');
+    // Recover: treat as allowed if admin, otherwise show sign-in so user
+    // can retry instead of spinning forever.
+    if (isAdmin()) {
+      S.authStatus = 'allowed';
+      ensurePlayerRecord(user);
+      attachDataListeners();
+      renderAll();
+    } else {
+      S.authStatus = 'signedout';
+      renderAll();
+      toast('Something went wrong — try signing in again');
+    }
   });
 }
 
@@ -2434,16 +2445,26 @@ function initSync() {
     _db = firebase.database(app);
   } catch (e) {
     console.error('Firebase init failed:', e);
+    S.authStatus = 'signedout';
+    renderAll();
     return;
   }
 
-  // The auth state callback drives everything. It fires once on load (with
-  // null or the cached user) and again on every sign-in/sign-out.
+  // Safety net: if auth doesn't resolve within 5s (iOS Safari IndexedDB
+  // delays, back-forward cache, etc.), drop to sign-in instead of spinning.
+  let authResolved = false;
+  setTimeout(() => {
+    if (!authResolved && S.authStatus === 'init') {
+      console.warn('Auth timeout — falling back to signedout');
+      S.authStatus = 'signedout';
+      renderAll();
+    }
+  }, 5000);
+
   firebase.auth().onAuthStateChanged(user => {
+    authResolved = true;
     S.authUser = user || null;
     if (!user) {
-      // If this device previously submitted a request, show the "thanks,
-      // come back and sign in" screen instead of the request form.
       let prev = null;
       try { prev = localStorage.getItem('kolache_requested'); } catch(e) {}
       S.authStatus = prev ? 'requested' : 'signedout';
@@ -2451,7 +2472,6 @@ function initSync() {
       renderAll();
       return;
     }
-    // We have a user; figure out whether they're allowlisted.
     S.authStatus = 'init';
     renderAll();
     handleSignedIn(user);

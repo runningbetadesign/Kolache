@@ -2483,6 +2483,9 @@ function toast(msg) {
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────
+// Force reload when iOS Safari restores page from back-forward cache —
+// stale Firebase connections and auth state cause the spinner bug.
+window.addEventListener('pageshow', e => { if (e.persisted) window.location.reload(); });
 initSync();
 </script>
 </body>

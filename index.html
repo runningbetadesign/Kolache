@@ -1239,7 +1239,7 @@ function wagerCardStandard(w) {
     </div>`;
   }
 
-  const editBtn = isAdmin() && w.status === 'open' ? `<button class="btn-link" style="font-size:12px;padding:0" onclick="openEditWager('${w.id}')">Edit</button>` : '';
+  const editBtn = isAdmin() && w.status === 'open' ? `<span style="display:flex;gap:10px"><button class="btn-link" style="font-size:12px;padding:0" onclick="openEditWager('${w.id}')">Edit</button><button class="btn-link" style="font-size:12px;padding:0;color:var(--no)" onclick="deleteWager('${w.id}')">Delete</button></span>` : '';
   const matched = poolTaken(w);
   const sub = [`${impliedOdds(w.proposerStake, w.takerPool)} odds`,
     `${fmt(matched)} / ${fmt(w.takerPool)} matched`,
@@ -1316,7 +1316,7 @@ function wagerCardPool(w) {
     }).join('')}</div>`;
   }
 
-  const editBtn = isAdmin() && w.status === 'open' ? `<button class="btn-link" style="font-size:12px;padding:0" onclick="openEditWager('${w.id}')">Edit</button>` : '';
+  const editBtn = isAdmin() && w.status === 'open' ? `<span style="display:flex;gap:10px"><button class="btn-link" style="font-size:12px;padding:0" onclick="openEditWager('${w.id}')">Edit</button><button class="btn-link" style="font-size:12px;padding:0;color:var(--no)" onclick="deleteWager('${w.id}')">Delete</button></span>` : '';
   const sub = [fmtDate(w.closeDate)].join(' · ');
 
   // Pool visualization
@@ -1965,6 +1965,34 @@ function acceptWager(wagerId) {
 }
 
 // ── CANCEL (proposer only, no acceptances) ────────────────────────────────
+function deleteWager(wagerId) {
+  if (!isAdmin()) return;
+  const w = S.wagers[wagerId]; if (!w) return;
+  if (!_db) return toast('Not connected');
+  if (!confirm('Delete this bet and refund everyone?')) return;
+  const wtype = w.type || 'wager';
+  const updates = {};
+  // Refund proposer stake (1-on-1 only)
+  if (wtype === 'wager' && w.proposerStake && w.proposerId) {
+    const p = S.players[w.proposerId];
+    if (p) updates[`${DB_PATH}/players/${w.proposerId}/balance`] = (p.balance||0) + w.proposerStake;
+  }
+  // Refund all acceptances (1-on-1)
+  for (const a of acceptanceList(w)) {
+    const p = S.players[a.takerId];
+    if (p) updates[`${DB_PATH}/players/${a.takerId}/balance`] = (p.balance||0) + a.takerStake;
+  }
+  // Refund all pool bets
+  for (const b of poolBetList(w)) {
+    const p = S.players[b.playerId];
+    if (p) updates[`${DB_PATH}/players/${b.playerId}/balance`] = (p.balance||0) + b.amount;
+  }
+  updates[`${DB_PATH}/wagers/${wagerId}`] = null;
+  _db.ref().update(updates).then(() => {
+    toast('Bet deleted — everyone refunded');
+  }).catch(e => { console.error('deleteWager:', e); toast('Delete failed'); });
+}
+
 function cancelWager(wagerId) {
   const w = S.wagers[wagerId]; if (!w) return;
   const player = me(); if (!player || player.id !== w.proposerId) return;

@@ -1543,11 +1543,27 @@ function renderAdmin() {
 
 function approvePending(ek) {
   if (!isAdmin() || !_db) return;
+  const req = S.pending[ek];
   const updates = {};
   updates[`${DB_PATH}/allowlist/${ek}`] = true;
   updates[`${DB_PATH}/pending/${ek}`]   = null;
   _db.ref().update(updates)
-    .then(() => toast('Approved'))
+    .then(() => {
+      toast('Approved');
+      const name = req?.name || 'friend';
+      const email = req?.email || '';
+      if (navigator.share) {
+        navigator.share({
+          title: 'Kolache — You\'re in!',
+          text: `Hey ${name}, you've been approved! Sign in with Google to start betting.`,
+          url: 'https://kolache-e58fa.web.app'
+        }).catch(() => {});
+      } else if (email) {
+        const subj = encodeURIComponent('Kolache — You\'re in!');
+        const body = encodeURIComponent(`Hey ${name}, you've been approved! Sign in with Google to start betting:\nhttps://kolache-e58fa.web.app`);
+        window.open(`mailto:${email}?subject=${subj}&body=${body}`);
+      }
+    })
     .catch(e => { console.error('approve:', e); toast('Approve failed'); });
 }
 
